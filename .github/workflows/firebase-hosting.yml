@@ -1,0 +1,37 @@
+name: Production - Firebase Hosting
+on:
+  push:
+    branches: [production]
+    paths: ["src/**", "public/**", "index.html", "package.json", "package-lock.json", "vite.config.ts", "tsconfig*.json", "firebase.json", ".firebaserc", ".github/workflows/firebase-hosting.yml"]
+  workflow_dispatch:
+concurrency: { group: uniqexclusives-hosting-production, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Prod
+    permissions: { id-token: write, contents: read }
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: Validate deployment identity
+        run: |
+          test -n "${{ secrets.GCP_WIF_PROVIDER }}" || { echo "Missing GCP_WIF_PROVIDER in the Prod environment"; exit 1; }
+          test -n "${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}" || { echo "Missing GCP_SERVICE_ACCOUNT_EMAIL in the Prod environment"; exit 1; }
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: "${{ secrets.GCP_WIF_PROVIDER }}"
+          service_account: "${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}"
+      - run: npm ci
+      - run: npm run lint && npm run build && npm test
+      - run: npm install --global firebase-tools@15.34.2
+      - run: firebase deploy --token "${{ steps.auth.outputs.access_token }}" --only hosting --project uniqexclusives --non-interactive --message "CI hosting deploy"
