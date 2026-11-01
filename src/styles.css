@@ -18,7 +18,7 @@ em{font-style:normal;color:var(--green)}
 .company-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .company-card{display:flex;flex-direction:column;gap:10px;padding:26px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(160deg,#0e2c1f,#071a12);transition:.2s}
 a.company-card:hover{border-color:rgba(31,211,138,.55);transform:translateY(-2px)}
-.company-logo{display:grid;place-items:center;height:110px;margin-bottom:8px;border-radius:16px;background:rgba(255,255,255,.03)}.company-logo img{max-height:84px;width:auto}
+.company-logo{display:flex;align-items:center;justify-content:center;gap:10px;height:110px;margin-bottom:8px;border-radius:16px;background:rgba(255,255,255,.03)}.company-logo img{max-height:90px;width:auto}.company-logo img.mark{max-height:52px}
 .company-name{font-size:22px;font-weight:700;letter-spacing:-.02em;text-align:center;padding:0 10px}
 .company-card h3{margin:0;font-size:19px}.company-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}.company-link{margin-top:auto;color:var(--green);font-size:14px}
 .uex{display:grid;grid-template-columns:1.4fr auto;align-items:center;gap:40px;margin-bottom:80px;padding:50px;border:1px solid var(--line);border-radius:30px;background:radial-gradient(circle at 85% 20%,rgba(31,211,138,.18),transparent 45%),linear-gradient(150deg,#0d3322,#06160f)}
