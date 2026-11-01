@@ -5,7 +5,7 @@ Website and app for Uniq Exclusives (uniqexclusives.com): the Uniq Group's home 
 ## Branches and deploys
 `production` is the default branch. Work happens on a branch and lands through a pull request, which runs lint, build and tests (`pull-request.yml`). Merging to `production` deploys:
 - **Hosting** (`firebase-hosting.yml`) when app files change.
-- **Firestore rules, indexes and Auth providers** (`firebase-rules.yml`) when `firestore.rules`, `firestore.indexes.json` or `firebase.json` change.
+- **Firestore rules and indexes** (`firebase-rules.yml`) when `firestore.rules`, `firestore.indexes.json` or `firebase.json` change. Auth providers (`auth` in `firebase.json`) are deployed by hand with `firebase deploy --only auth`, because turning on a provider can enable Google APIs, which the CI deployer is not allowed to do.
 
 Cloud Functions are not set up yet: they need the Blaze plan. When billing is linked, add `functions/` and a `firebase-functions.yml` like Uniquem's (and grant the deployer `roles/cloudfunctions.admin` and `roles/artifactregistry.admin`).
 
