@@ -22,7 +22,7 @@ export default function Home() {
         <div className="company-grid">
           {COMPANIES.map((c) => {
             const inner = <>
-              <div className="company-logo">{c.logo ? <img src={c.logo.src} alt={c.name} width={c.logo.width} height={c.logo.height} /> : <span className="company-name">{c.name}</span>}</div>
+              <div className="company-logo">{c.logo ? <><img src={c.logo.src} alt={c.logo.withName ? "" : c.name} width={c.logo.width} height={c.logo.height} className={c.logo.withName ? "mark" : undefined} />{c.logo.withName && <span className="company-name">{c.name}</span>}</> : <span className="company-name">{c.name}</span>}</div>
               <h3>{c.name}</h3>
               {c.blurb && <p>{c.blurb}</p>}
               {c.url && <span className="company-link">Visit site →</span>}
