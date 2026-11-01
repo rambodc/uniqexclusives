@@ -1,0 +1,59 @@
+/* UEX home: black void, emerald light, nothing yellow. The globe image itself is never filtered; glow sits behind it. */
+.uex{position:relative;min-height:100vh;min-height:100svh;overflow:hidden;background:#010604;color:#e8fff3;isolation:isolate;display:flex;flex-direction:column}
+.uex-field{position:absolute;inset:0;width:100%;height:100%;z-index:-2;display:block}
+.uex-field[data-fallback]{background:radial-gradient(circle at 50% 38%,rgba(31,211,138,.35),transparent 40%),#010604}
+.uex-grain{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.uex-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(48px,8vh,96px) 20px 24px;text-align:center}
+
+.uex-whisper{position:relative;height:1.6em;margin:0 0 clamp(14px,2.6vh,28px);font:italic 400 clamp(19px,2.1vw,27px)/1.3 "Cormorant Garamond",Georgia,serif;letter-spacing:.02em;color:#c9f7df;text-shadow:0 0 18px rgba(31,230,140,.45)}
+.uex-whisper span{display:block;animation:whisper 3.6s ease-in-out both}
+@keyframes whisper{0%{opacity:0;filter:blur(6px);transform:translateY(6px)}18%{opacity:1;filter:blur(0);transform:none}80%{opacity:1;filter:blur(0)}100%{opacity:0;filter:blur(5px);transform:translateY(-4px)}}
+
+.uex-mark{position:relative;display:grid;place-items:center}
+.uex-globe{position:relative;width:clamp(150px,17vw,250px);aspect-ratio:900/647;opacity:0;transform:scale(.92) translateY(10px);transition:opacity 1.6s ease,transform 2.4s cubic-bezier(.16,1,.3,1)}
+.uex-globe.on{opacity:1;transform:none}
+.uex-globe img{position:relative;width:100%;height:auto;display:block}
+.uex-halo{position:absolute;inset:-60% -55%;border-radius:50%;background:radial-gradient(closest-side,rgba(60,255,160,.42),rgba(20,190,110,.16) 45%,transparent 72%);animation:halo 6s ease-in-out infinite}
+@keyframes halo{50%{opacity:.7;transform:scale(1.06)}}
+
+.uex-title{position:relative;display:flex;align-items:baseline;justify-content:center;margin:clamp(-44px,-3vw,-26px) 0 0;font:500 clamp(84px,12.5vw,196px)/.9 Cinzel,"Trajan Pro",Georgia,serif;letter-spacing:.02em}
+.uex-title i{font-style:normal;display:inline-block;background:linear-gradient(178deg,#f4fff9 0%,#bff5d9 26%,#33d98b 48%,#0b6a3f 56%,#58eaa6 72%,#e2fff0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(30,230,140,.38)) drop-shadow(0 2px 1px rgba(0,0,0,.65))}
+.uex-word i{opacity:0}
+.uex-word.on i{animation:letter 1.5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes letter{0%{opacity:0;transform:translateY(.12em) scale(1.06);filter:blur(14px) drop-shadow(0 0 22px rgba(30,230,140,.38))}100%{opacity:1;transform:none;filter:blur(0) drop-shadow(0 0 22px rgba(30,230,140,.38)) drop-shadow(0 2px 1px rgba(0,0,0,.65))}}
+.uex-two{display:inline-block;max-width:0;overflow:visible;opacity:0;transition:max-width 1.1s cubic-bezier(.65,0,.35,1),margin 1.1s cubic-bezier(.65,0,.35,1),opacity .4s ease}
+.uex-two i{transform:translateX(.6em);opacity:0;filter:blur(18px)}
+.uex-two.on{max-width:1em;margin-left:.28em;opacity:1}
+.uex-two.on i{animation:two 1.3s .35s cubic-bezier(.16,1,.3,1) both}
+@keyframes two{0%{opacity:0;transform:translateX(.6em) scale(1.25);filter:blur(18px) drop-shadow(0 0 40px rgba(60,255,160,.9))}55%{filter:blur(0) drop-shadow(0 0 46px rgba(60,255,160,.85))}100%{opacity:1;transform:none;filter:blur(0) drop-shadow(0 0 22px rgba(30,230,140,.38)) drop-shadow(0 2px 1px rgba(0,0,0,.65))}}
+
+.uex-sub{margin:clamp(14px,2.4vh,26px) 0 0;padding-left:.62em;font:500 clamp(13px,1.45vw,21px)/1 Cinzel,Georgia,serif;letter-spacing:.62em;text-transform:uppercase;color:#bdeed4;opacity:0;transform:translateY(8px);transition:opacity 1.6s ease,transform 1.6s ease,letter-spacing 2.4s cubic-bezier(.16,1,.3,1)}
+.uex-sub.on{opacity:.95;transform:none}
+.uex-cta{display:grid;justify-items:center;gap:16px;margin-top:clamp(30px,5vh,52px);opacity:0;transform:translateY(10px);transition:opacity 1.2s ease,transform 1.2s ease}
+.uex-cta.on{opacity:1;transform:none}
+.uex-invite{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:220px;min-height:48px;padding:0 34px;border:1px solid rgba(80,255,170,.7);border-radius:2px;background:rgba(4,30,18,.45);color:#eafff3;font:400 18px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.08em;box-shadow:0 0 18px rgba(40,240,150,.35),inset 0 0 14px rgba(40,240,150,.18);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:box-shadow .3s,background .3s,border-color .3s}
+.uex-invite:hover,.uex-invite:focus-visible{background:rgba(10,60,36,.55);border-color:#7dffc2;box-shadow:0 0 30px rgba(40,240,150,.6),inset 0 0 18px rgba(40,240,150,.3);outline:0}
+.uex-invite:after{content:"";position:absolute;inset:-1px;border-radius:inherit;box-shadow:0 0 0 0 rgba(60,255,160,.5);animation:pulse 3.2s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(60,255,160,.45)}70%,100%{box-shadow:0 0 0 14px rgba(60,255,160,0)}}
+.uex-signin{color:#8fc8aa;font:400 15px/1.3 "Cormorant Garamond",Georgia,serif;letter-spacing:.04em}.uex-signin u{text-underline-offset:3px;text-decoration-color:rgba(143,200,170,.5)}.uex-signin:hover{color:#dfffee}
+
+.uex-companies{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:clamp(18px,5vw,72px);padding:18px 20px max(26px,env(safe-area-inset-bottom));font:400 clamp(15px,1.35vw,20px)/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.04em;color:#cfeedd}
+.uex-companies>*{opacity:0;transform:translateY(8px);transition:opacity 1.2s ease,transform 1.2s ease,color .3s}
+.uex-companies.on>*{opacity:.82;transform:none}.uex-companies>a:hover{opacity:1;color:#fff}
+.uex-companies img{height:clamp(34px,3.4vw,48px);width:auto}
+
+@media(max-width:600px){
+  .uex-stage{padding-top:56px}
+  .uex-globe{width:clamp(130px,40vw,170px)}
+  .uex-title{font-size:clamp(70px,22vw,100px);margin-top:-18px}
+  .uex-sub{font-size:12.5px;letter-spacing:.5em;padding-left:.5em}
+  .uex-whisper{font-size:20px}
+  .uex-companies{display:grid;grid-template-columns:1fr 1fr;gap:16px 10px;font-size:15px}
+  .uex-companies>*{display:flex;justify-content:center}
+  .uex-companies img{height:36px}
+}
+@media(prefers-reduced-motion:reduce){
+  .uex *,.uex *:before,.uex *:after{animation:none!important;transition:none!important}
+  .uex-globe,.uex-sub,.uex-cta,.uex-companies>*,.uex-word i,.uex-two i{opacity:1!important;transform:none!important;filter:none}
+  .uex-title i{filter:drop-shadow(0 0 22px rgba(30,230,140,.38))}
+}

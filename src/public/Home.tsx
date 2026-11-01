@@ -1,42 +1,67 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { COMPANIES } from "./companies";
+import BeamField from "./uex/BeamField";
+import { LINES } from "./uex/lines";
+import "@fontsource/cinzel/500.css";
+import "@fontsource/cormorant-garamond/400.css";
+import "@fontsource/cormorant-garamond/400-italic.css";
+import "./uex/uex.css";
+
+const LINE_MS = 3600;
+
+/** Rotating line above the title. Each line fades in, holds, and fades out. */
+function Whisper({ start }: { start: boolean }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    const id = setInterval(() => setI((n) => (n + 1) % LINES.length), LINE_MS);
+    return () => clearInterval(id);
+  }, [start]);
+  return <p className="uex-whisper" aria-live="polite">{start && <span key={i}>{LINES[i]}</span>}</p>;
+}
 
 export default function Home() {
   const { user } = useAuth();
-  return <div className="site">
-    <header className="site-header">
-      <Link to="/" className="wordmark">Uniq<span>Exclusives</span></Link>
-      <nav><a href="#uex">UEX</a><a href="#companies">Companies</a></nav>
-      <Link className="header-login" to={user ? "/account" : "/signin"}>{user ? "My account" : "Sign in"}</Link>
-    </header>
-    <main>
-      <section className="hero">
-        <span className="eyebrow">UEX by the Uniq Group</span>
-        <h1>Uniq<br /><em>Exclusives.</em></h1>
-        <p>Uniq Exclusives is home to the Uniq Group: Uniquem, UniqEnergy Solutions, Kemko and Al Chem. Same owners, one group.</p>
-        <div className="hero-actions"><a className="button-primary" href="#companies">Meet the companies</a>{!user && <Link className="button-ghost" to="/signin?mode=signup">Create an account</Link>}</div>
-      </section>
-      <section id="companies" className="section">
-        <div className="section-head"><span className="eyebrow">The Uniq Group</span><h2>Four companies, <em>one group</em></h2></div>
-        <div className="company-grid">
-          {COMPANIES.map((c) => {
-            const inner = <>
-              <div className="company-logo">{c.logo ? <><img src={c.logo.src} alt={c.logo.withName ? "" : c.name} width={c.logo.width} height={c.logo.height} className={c.logo.withName ? "mark" : undefined} />{c.logo.withName && <span className="company-name">{c.name}</span>}</> : <span className="company-name">{c.name}</span>}</div>
-              <h3>{c.name}</h3>
-              {c.blurb && <p>{c.blurb}</p>}
-              {c.url && <span className="company-link">Visit site →</span>}
-            </>;
-            return c.url ? <a key={c.id} className="company-card" href={c.url} target="_blank" rel="noopener noreferrer">{inner}</a> : <article key={c.id} className="company-card">{inner}</article>;
-          })}
+  const globe = useRef<HTMLDivElement>(null);
+  const [stage, setStage] = useState(() => (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 9 : 0));
+  useEffect(() => {
+    if (stage >= 9) return;
+    // 1 globe · 2 UEX · 3 the "2" arrives · 4 Uniq Exclusives · 5 whisper · 6 invite · 7 companies
+    const times = [250, 1100, 2500, 3300, 3900, 4500, 5200];
+    const ids = times.map((ms, n) => setTimeout(() => setStage(n + 1), ms));
+    return () => ids.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the timeline runs once, from the first render
+  }, []);
+  const at = (n: number) => (stage >= n ? " on" : "");
+  return <div className="uex">
+    <BeamField anchor={globe} />
+    <div className="uex-grain" aria-hidden="true" />
+    <main className="uex-stage">
+      <Whisper start={stage >= 5} />
+      <div className="uex-mark">
+        <div ref={globe} className={`uex-globe${at(1)}`}>
+          <span className="uex-halo" aria-hidden="true" />
+          <img src="/brand/uex-globe.webp" alt="" width={900} height={647} fetchPriority="high" decoding="async" />
         </div>
-      </section>
-      <section id="uex" className="section uex">
-        <div><span className="eyebrow">UEX</span><h2>Uniq <em>Exclusives</em></h2>
-          <p>UEX is the Uniq Group's invite-only event series: private nights for our partners, clients and friends. Invites, RSVPs and check-in are coming to this site soon.</p></div>
-        <Link className="button-primary" to={user ? "/account" : "/signin?mode=signup"}>{user ? "Go to my account" : "Join the list"}</Link>
-      </section>
+        <h1 className="uex-title" aria-label="UEX 2">
+          <span className={`uex-word${at(2)}`} aria-hidden="true">{"UEX".split("").map((c, n) => <i key={n} style={{ animationDelay: `${n * 140}ms` }}>{c}</i>)}</span>
+          <span className={`uex-two${at(3)}`} aria-hidden="true"><i>2</i></span>
+        </h1>
+      </div>
+      <p className={`uex-sub${at(4)}`}>Uniq Exclusives</p>
+      <div className={`uex-cta${at(6)}`}>
+        <Link className="uex-invite" to={user ? "/account" : "/signin?mode=signup"}>{user ? "Your invitation" : "Request an invite"}</Link>
+        {!user && <Link className="uex-signin" to="/signin">Already on the list? <u>Sign in</u></Link>}
+      </div>
     </main>
-    <footer className="site-footer"><span>© {new Date().getFullYear()} Uniq Exclusives · The Uniq Group</span><span>Calgary, Alberta</span></footer>
+    <footer className={`uex-companies${at(7)}`} aria-label="The Uniq Group">
+      {COMPANIES.map((c, n) => {
+        const inner = c.logo ? <img src={c.logo.src} alt={c.name} width={c.logo.width} height={c.logo.height} loading="lazy" /> : <span>{c.name}</span>;
+        const style = { transitionDelay: `${n * 160}ms` };
+        return c.url ? <a key={c.id} href={c.url} target="_blank" rel="noopener noreferrer" style={style}>{inner}</a> : <div key={c.id} style={style}>{inner}</div>;
+      })}
+    </footer>
   </div>;
 }
