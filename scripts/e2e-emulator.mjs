@@ -24,10 +24,10 @@ await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${P}/accounts`, { method
 const OWNER = "rambodr@uniquem.ca";
 await fetch(`${FS}/users?documentId=OWNERUID`, { method: "POST", headers: admin, body: JSON.stringify({ fields: { email: { stringValue: OWNER }, name: { stringValue: "Rambod Rad" }, role: { stringValue: "owner" } } }) });
 
-let t = Date.now(); const r1 = await call("requestCode", { email: "stranger@example.com" }); const tUnknown = Date.now() - t;
-t = Date.now(); const r2 = await call("requestCode", { email: " RambodR@Uniquem.ca " }); const tKnown = Date.now() - t;
-ok(JSON.stringify(r1) === JSON.stringify(r2) && r1.ok === true, `identical replies (${JSON.stringify(r1)}), times unknown ${tUnknown}ms known ${tKnown}ms`);
+ok((await fails(call("requestCode", { email: "stranger@example.com" }))) === "functions/not-found", "unknown email is refused with not-found");
 ok(!(await codeDoc("stranger@example.com")), "no code stored for an email not on the list");
+const r2 = await call("requestCode", { email: " RambodR@Uniquem.ca " });
+ok(r2.ok === true, "known email gets a code");
 ok(!!(await codeDoc(OWNER)), "code stored (hashed) for the owner");
 const code = await crack(OWNER);
 ok(/^\d{6}$/.test(code), "code is 6 digits");
@@ -72,6 +72,6 @@ await call("requestCode", { email: OWNER }); const oc = await crack(OWNER);
 await signInWithCustomToken(auth, (await call("verifyCode", { email: OWNER, code: oc })).token);
 await call("removeUser", { uid });
 ok(!(await getDoc(doc(db, "users", uid))).exists(), "owner removed the guest");
-await call("requestCode", { email: "guest@example.com" });
+ok((await fails(call("requestCode", { email: "guest@example.com" }))) === "functions/not-found", "removed guest gets not-found");
 ok(!(await codeDoc("guest@example.com")), "removed guest gets no code");
 process.exit();

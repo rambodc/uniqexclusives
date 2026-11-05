@@ -25,22 +25,22 @@ void main(){
   float t=uTime;
   vec2 dir=p/max(d,1e-4);
   // Beams: sharp noise around the circle (sampled on the unit circle, so there is no seam), turning briskly in layers.
-  float rot1=t*.16, rot2=-t*.11;
+  float rot1=t*.08, rot2=-t*.055;
   vec2 d1=vec2(cos(a+rot1),sin(a+rot1)), d2=vec2(cos(a+rot2),sin(a+rot2));
   float b=0.;
-  b+=pow(n2(d1*4.0+vec2(t*.20,0.)),8.)*1.5;
-  b+=pow(n2(d2*8.5+vec2(5.2,t*.26)),12.)*1.4;
-  b+=pow(n2(d1*15.+vec2(-t*.30,9.1)),18.)*1.2;
-  b*=.55+.6*n2(d2*2.+vec2(t*.45,2.));                  // breathing
-  b*=.78+.42*n2(vec2(a*3.,t*7.));                       // flicker, sector by sector
+  b+=pow(n2(d1*4.0+vec2(t*.10,0.)),8.)*1.5;
+  b+=pow(n2(d2*8.5+vec2(5.2,t*.13)),12.)*1.4;
+  b+=pow(n2(d1*15.+vec2(-t*.15,9.1)),18.)*1.2;
+  b*=.55+.6*n2(d2*2.+vec2(t*.225,2.));                 // breathing
+  b*=.78+.42*n2(vec2(a*3.,t*3.5));                     // flicker, sector by sector
   // Two searchlights sweeping round, plus shine pulses racing outward along the beams.
-  float sweep=pow(max(0.,cos(a-t*.85)),46.)*1.25+pow(max(0.,cos(a+t*.6+2.1)),70.)*.95;
-  float pulse=pow(n1(d*7.-t*3.2+a*1.7),6.)*.9+pow(n1(d*11.-t*4.6-a*2.3+7.),9.)*.6;
+  float sweep=pow(max(0.,cos(a-t*.425)),46.)*1.25+pow(max(0.,cos(a+t*.3+2.1)),70.)*.95;
+  float pulse=pow(n1(d*7.-t*1.6+a*1.7),6.)*.9+pow(n1(d*11.-t*2.3-a*2.3+7.),9.)*.6;
   float up=.6+.4*smoothstep(-.7,.9,dir.y);
   float fall=exp(-d*1.05)*smoothstep(.02,.2,d);
   float beams=(b*(1.+pulse*1.3)+sweep*(.6+pulse))*fall*up;
   // Glow behind the globe, shimmering.
-  float core=(exp(-d*d*20.)*.95+exp(-d*4.)*.22)*(.92+.08*sin(t*5.3)+.06*sin(t*13.1));
+  float core=(exp(-d*d*20.)*.95+exp(-d*4.)*.22)*(.92+.08*sin(t*2.65)+.06*sin(t*6.55));
   // Smoke: swirling, domain-warped, filling the room and lit where the beams cut through it (volumetric look).
   float sw=.9*sin(t*.25)+1.6/(1.+d*3.);
   mat2 R=mat2(cos(sw),-sin(sw),sin(sw),cos(sw));

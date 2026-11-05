@@ -1,5 +1,5 @@
 // Uniq Exclusives Cloud Functions (2nd gen, us-central1).
-//  Sign-in (invite only, no passwords): requestCode emails a 6-digit code to people who already have a users record;
+//  Sign-in (invite only, no passwords): requestCode emails a 6-digit code only to people who already have a users record (others get not-found);
 //  verifyCode checks it and returns a Firebase custom token. Codes live in loginCodes/{sha256(email)}, which clients can never read.
 //  Users (owners only): createUser, removeUser. Listing is a plain Firestore read that firestore.rules allows owners.
 import { getApps, initializeApp } from "firebase-admin/app";
@@ -18,9 +18,8 @@ const db = getFirestore(app), auth = getAuth(app);
 const resendApiKey = defineSecret("RESEND_API_KEY");
 const ORIGINS = ["https://uniqexclusives.com", "https://www.uniqexclusives.com", "https://uniqexclusives.web.app", "https://uniqexclusives.firebaseapp.com", /^http:\/\/(localhost|127\.0\.0\.1):\d+$/];
 const base = { region: "us-central1", cors: ORIGINS, maxInstances: 3, memory: "256MiB" };
-const SENT = { ok: true };   // requestCode always answers exactly this, whether or not the email is on the list
-const MIN_REPLY_MS = 1500;   // and always takes at least this long, so timing does not tell either
 const BAD_CODE = "That code isn't right or has expired. Request a new one.";
+const NO_ACCOUNT = "There's no account for that email. UEX is invite-only.";
 
 async function findUserByEmail(email) {
   const snap = await db.collection("users").where("email", "==", email).limit(1).get();
@@ -28,35 +27,34 @@ async function findUserByEmail(email) {
 }
 
 export const requestCode = onCall({ ...base, secrets: [resendApiKey], timeoutSeconds: 30 }, async (request) => {
-  const started = Date.now();
   const email = normalizeEmail(request.data?.email);
   if (!email) throw new HttpsError("invalid-argument", "Enter a valid email address.");
+  const user = await findUserByEmail(email);
+  if (!user) throw new HttpsError("not-found", NO_ACCOUNT);
+  const ref = db.collection("loginCodes").doc(codeDocId(email));
+  const code = newCode(), salt = newSalt(), now = Date.now();
+  const allowed = await db.runTransaction(async (tx) => {
+    const window = sendWindow((await tx.get(ref)).data()?.sends, now);
+    if (!window.allowed) return false;
+    tx.set(ref, { hash: hashCode(code, salt), salt, expiresAt: now + CODE_TTL_MS, attempts: 0, sends: [...window.recent, now], uid: user.id, createdAt: FieldValue.serverTimestamp() });
+    return true;
+  });
+  if (!allowed) {
+    logger.warn("Sign-in code rate limited", { uid: user.id });
+    return { ok: true };
+  }
   try {
-    const user = await findUserByEmail(email);
-    if (user) {
-      const ref = db.collection("loginCodes").doc(codeDocId(email));
-      const code = newCode(), salt = newSalt(), now = Date.now();
-      const allowed = await db.runTransaction(async (tx) => {
-        const window = sendWindow((await tx.get(ref)).data()?.sends, now);
-        if (!window.allowed) return false;
-        tx.set(ref, { hash: hashCode(code, salt), salt, expiresAt: now + CODE_TTL_MS, attempts: 0, sends: [...window.recent, now], uid: user.id, createdAt: FieldValue.serverTimestamp() });
-        return true;
-      });
-      if (allowed) {
-        const name = typeof user.get("name") === "string" ? user.get("name").split(" ")[0] : "";
-        const id = await sendEmail(resendApiKey.value(), {
-          from: EMAIL_FROM, to: [email], reply_to: REPLY_TO, subject: codeEmailSubject(code),
-          html: codeEmailHtml(code, name), text: codeEmailText(code, name)
-        }, { idempotencyKey: `login-code/${codeDocId(email)}/${now}` });
-        logger.info("Sign-in code sent", { uid: user.id, resendId: id });
-      } else logger.warn("Sign-in code rate limited", { uid: user.id });
-    }
+    const name = typeof user.get("name") === "string" ? user.get("name").split(" ")[0] : "";
+    const id = await sendEmail(resendApiKey.value(), {
+      from: EMAIL_FROM, to: [email], reply_to: REPLY_TO, subject: codeEmailSubject(code),
+      html: codeEmailHtml(code, name), text: codeEmailText(code, name)
+    }, { idempotencyKey: `login-code/${codeDocId(email)}/${now}` });
+    logger.info("Sign-in code sent", { uid: user.id, resendId: id });
   } catch (error) {
     logger.error("requestCode failed", { message: error instanceof Error ? error.message : String(error) });
+    throw new HttpsError("internal", "We couldn't send the code. Please try again.");
   }
-  const wait = MIN_REPLY_MS - (Date.now() - started);
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  return SENT;
+  return { ok: true };
 });
 
 // Runs as the project's Firebase Admin SDK service account: it holds Service Account Token Creator, which signing a custom token needs

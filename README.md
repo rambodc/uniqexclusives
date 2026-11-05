@@ -11,14 +11,14 @@ Website and app for Uniq Exclusives (uniqexclusives.com): the Uniq Group's home 
 ## CI identity
 GitHub Actions signs in to Google Cloud with Workload Identity Federation, so there is no key file. The `Prod` environment holds:
 - `GCP_WIF_PROVIDER`: the `github-actions` pool's `github-uniqexclusives` provider, which only trusts `rambodc/uniqexclusives`.
-- `GCP_SERVICE_ACCOUNT_EMAIL`: `github-deployer@uniqexclusives.iam.gserviceaccount.com` (`roles/firebase.admin`, `roles/iam.serviceAccountUser`; deploying functions may also need `roles/cloudfunctions.admin`, `roles/run.admin`, `roles/artifactregistry.admin` and `roles/secretmanager.viewer`).
+- `GCP_SERVICE_ACCOUNT_EMAIL`: `github-deployer@uniqexclusives.iam.gserviceaccount.com` (`roles/firebase.admin`, `roles/iam.serviceAccountUser`, plus `roles/cloudfunctions.developer`, `roles/run.admin`, `roles/artifactregistry.writer`, `roles/secretmanager.viewer`, and permission to act as both function runtime service accounts).
 - `VITE_FIREBASE_*`: the public web app config (same values as `.env.example`).
 
 ## Sign-in (invite only)
-1. `/signin`: the person types their email and the `requestCode` function runs. Only if a `users` record has that email does it make a 6-digit code, store its salted HMAC, expiry (10 min) and attempt count in `loginCodes/{sha256(email)}`, and email it through Resend from `Uniq Exclusives <website@uniquem.ca>` (max 5 code emails per address per hour). The reply is always `{ ok: true }` and takes at least 1.5 s, so nobody can tell who is on the list.
-2. The person types the code; `verifyCode` checks it (5 wrong tries burn it, it works once), makes sure the Auth account exists with the `users` record's uid, and returns a custom token; the browser signs in with `signInWithCustomToken`. `verifyCode` runs as `firebase-adminsdk-fbsvc@`, which can sign tokens.
+1. `/signin`: the person types their email and the `requestCode` function runs. If no `users` record has that email, it returns `not-found` and the page says *"There's no account for that email. UEX is invite-only."* — no email is sent. If they are on the list, it makes a 6-digit code, stores its salted HMAC, expiry (10 min) and attempt count in `loginCodes/{sha256(email)}`, and emails it through Resend from `Uniq Exclusives <website@uniquem.ca>` (max 5 code emails per address per hour).
+2. The person types the code (shown as `123-456` in the email and on the page; paste with or without the dash works); `verifyCode` checks the six digits (5 wrong tries burn it, it works once), makes sure the Auth account exists with the `users` record's uid, and returns a custom token; the browser signs in with `signInWithCustomToken`. `verifyCode` runs as `firebase-adminsdk-fbsvc@`, which can sign tokens.
 
-The email is `functions/email.js` (tables and inline styles for Gmail, Apple Mail and Outlook; the globe is `public/brand/email/uex-globe@2x.png`).
+The email is `functions/email.js` (tables and inline styles for Gmail, Apple Mail and Outlook; the globe is `public/brand/email/uex-globe@2x.png`). The code is large plain text with a dash between the first 3 and last 3 digits — no boxes around each digit.
 
 **Secret:** `RESEND_API_KEY` in Secret Manager (a sending-only key for the `uniquem.ca` domain). Set it with `firebase functions:secrets:set RESEND_API_KEY --project uniqexclusives`, then redeploy functions (run the *Production - Firebase Functions* workflow) so they pick up the new version. Never commit it or put it in a GitHub secret.
 
