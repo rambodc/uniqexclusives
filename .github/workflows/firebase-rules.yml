@@ -2,7 +2,7 @@ name: Production - Firebase Rules
 on:
   push:
     branches: [production]
-    paths: ["firestore.rules", "firestore.indexes.json", "firebase.json", ".firebaserc", ".github/workflows/firebase-rules.yml"]
+    paths: ["firestore.rules", "firestore.indexes.json", "storage.rules", "firebase.json", ".firebaserc", ".github/workflows/firebase-rules.yml"]
   workflow_dispatch:
 concurrency: { group: uniqexclusives-rules-production, cancel-in-progress: false }
 jobs:
@@ -25,4 +25,4 @@ jobs:
           workload_identity_provider: "${{ secrets.GCP_WIF_PROVIDER }}"
           service_account: "${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}"
       - run: npm install --global firebase-tools@15.34.2
-      - run: firebase deploy --token "${{ steps.auth.outputs.access_token }}" --only firestore:rules,firestore:indexes --project uniqexclusives --non-interactive --force --message "CI rules deploy"
+      - run: firebase deploy --token "${{ steps.auth.outputs.access_token }}" --only firestore:rules,firestore:indexes,storage --project uniqexclusives --non-interactive --force --message "CI rules deploy"

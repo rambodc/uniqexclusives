@@ -16,6 +16,7 @@ const app = initializeApp({
 export const auth = getAuth(app);
 export const authReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 export const db = getFirestore(app);
+export { app };
 const functions = getFunctions(app, "us-central1");
 // Local testing only: `VITE_USE_EMULATORS=true npm run dev` talks to the Firebase emulators instead of production.
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") {
@@ -27,3 +28,22 @@ export const requestCode = httpsCallable<{ email: string }, { ok: true }>(functi
 export const verifyCode = httpsCallable<{ email: string; code: string }, { token: string }>(functions, "verifyCode");
 export const createUser = httpsCallable<{ email: string; name: string; role: string }, { uid: string }>(functions, "createUser");
 export const removeUser = httpsCallable<{ uid: string }, { ok: true }>(functions, "removeUser");
+
+// Parties and invites (functions/parties-api.js).
+export type PartyInput = {
+  id: string; name: string; description: string; photoPath: string | null; startsAt: number; endsAt: number | null; location: string;
+  locationRevealed: boolean; dressCode: string; guestLimit: number | null; published: boolean; pageSlug: string | null;
+};
+export type GuestInput = { partyId: string; name: string; email: string; guestOf: string; canInvite: boolean; inviteLimit: number };
+type Sent = { link: string; emailed: boolean };
+export const saveParty = httpsCallable<PartyInput, { id: string }>(functions, "saveParty");
+export const deleteParty = httpsCallable<{ id: string }, { ok: true }>(functions, "deleteParty");
+export const inviteGuest = httpsCallable<GuestInput, Sent & { uid: string }>(functions, "inviteGuest");
+export const updateGuest = httpsCallable<{ partyId: string; uid: string; canInvite: boolean; inviteLimit: number }, { ok: true }>(functions, "updateGuest");
+export const resendInvite = httpsCallable<{ partyId: string; uid: string }, Sent>(functions, "resendInvite");
+export const inviteLinkFor = httpsCallable<{ partyId: string; uid: string }, { link: string }>(functions, "inviteLinkFor");
+export const removeGuest = httpsCallable<{ partyId: string; uid: string }, { ok: true }>(functions, "removeGuest");
+export const decideRequest = httpsCallable<{ partyId: string; requestId: string; approve: boolean }, { status: string } & Partial<Sent>>(functions, "decideRequest");
+export const redeemInvite = httpsCallable<{ partyId: string; token: string }, { token: string }>(functions, "redeemInvite");
+export const rsvp = httpsCallable<{ partyId: string; status: "accepted" | "declined" }, { status: string }>(functions, "rsvp");
+export const requestInvite = httpsCallable<{ partyId: string; name: string; email: string; note: string }, { id: string }>(functions, "requestInvite");

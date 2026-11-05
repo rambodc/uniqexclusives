@@ -8,8 +8,8 @@ import { ROLES, ROLE_LABELS, isEmail, parseUserRecord, type Role, type UserRecor
 type Row = UserRecord & { uid: string };
 const message = (e: unknown) => e instanceof FirebaseError && e.message && !e.message.startsWith("internal") ? e.message : "Something went wrong. Please try again.";
 
-/** Owners only: everyone on the list, add someone (they can then sign in with an email code), remove someone. */
-export default function Admin() {
+/** Owners only (/app/people): everyone on the list, add someone (they can then sign in with an email code), remove someone. */
+export default function People() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[] | null>(null), [loadError, setLoadError] = useState("");
   const [email, setEmail] = useState(""), [name, setName] = useState(""), [role, setRole] = useState<Role>("member");

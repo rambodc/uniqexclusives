@@ -1,30 +1,21 @@
 // Uniq Exclusives Cloud Functions (2nd gen, us-central1).
 //  Sign-in (invite only, no passwords): requestCode emails a 6-digit code only to people who already have a users record (others get not-found);
 //  verifyCode checks it and returns a Firebase custom token. Codes live in loginCodes/{sha256(email)}, which clients can never read.
-//  Users (owners only): createUser, removeUser. Listing is a plain Firestore read that firestore.rules allows owners.
-import { getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
-import { defineSecret } from "firebase-functions/params";
+//  Users (owners only): createUser, removeUser. Removing someone also takes them off every party list. Listing is a plain Firestore read that firestore.rules allows owners.
+//  Parties and invites: see parties-api.js.
+import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
 import { CODE_TTL_MS, checkCode, cleanCode, codeDocId, hashCode, newCode, newSalt, normalizeEmail, sendWindow } from "./codes.js";
 import { EMAIL_FROM, REPLY_TO, codeEmailHtml, codeEmailSubject, codeEmailText } from "./email.js";
 import { sendEmail } from "./mailer.js";
+import { removeGuestPlace } from "./parties-api.js";
 import { cleanName, isRole } from "./users.js";
+import { TOKEN_SIGNER, auth, base, db, ensureAuthUser, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
 
-const app = getApps()[0] ?? initializeApp();
-const db = getFirestore(app), auth = getAuth(app);
-const resendApiKey = defineSecret("RESEND_API_KEY");
-const ORIGINS = ["https://uniqexclusives.com", "https://www.uniqexclusives.com", "https://uniqexclusives.web.app", "https://uniqexclusives.firebaseapp.com", /^http:\/\/(localhost|127\.0\.0\.1):\d+$/];
-const base = { region: "us-central1", cors: ORIGINS, maxInstances: 3, memory: "256MiB" };
+export * from "./parties-api.js";
 const BAD_CODE = "That code isn't right or has expired. Request a new one.";
 const NO_ACCOUNT = "There's no account for that email. UEX is invite-only.";
-
-async function findUserByEmail(email) {
-  const snap = await db.collection("users").where("email", "==", email).limit(1).get();
-  return snap.empty ? null : snap.docs[0];
-}
 
 export const requestCode = onCall({ ...base, secrets: [resendApiKey], timeoutSeconds: 30 }, async (request) => {
   const email = normalizeEmail(request.data?.email);
@@ -57,9 +48,6 @@ export const requestCode = onCall({ ...base, secrets: [resendApiKey], timeoutSec
   return { ok: true };
 });
 
-// Runs as the project's Firebase Admin SDK service account: it holds Service Account Token Creator, which signing a custom token needs
-// (the default compute account does not).
-const TOKEN_SIGNER = "firebase-adminsdk-fbsvc@uniqexclusives.iam.gserviceaccount.com";
 export const verifyCode = onCall({ ...base, timeoutSeconds: 20, serviceAccount: TOKEN_SIGNER }, async (request) => {
   const email = normalizeEmail(request.data?.email), code = cleanCode(request.data?.code);
   if (!email || !code) throw new HttpsError("invalid-argument", BAD_CODE);
@@ -75,23 +63,9 @@ export const verifyCode = onCall({ ...base, timeoutSeconds: 20, serviceAccount: 
   const user = await findUserByEmail(email);
   if (!user) throw new HttpsError("permission-denied", BAD_CODE);
   const name = typeof user.get("name") === "string" ? user.get("name") : undefined;
-  try {
-    const existing = await auth.getUser(user.id);
-    if (!existing.emailVerified || existing.email !== email) await auth.updateUser(user.id, { email, emailVerified: true });
-  } catch (error) {
-    if (error?.code !== "auth/user-not-found") throw error;
-    await auth.createUser({ uid: user.id, email, emailVerified: true, displayName: name });
-  }
+  await ensureAuthUser(user.id, email, name);
   return { token: await auth.createCustomToken(user.id) };
 });
-
-async function requireOwner(request) {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
-  const me = await db.collection("users").doc(uid).get();
-  if (me.get("role") !== "owner") throw new HttpsError("permission-denied", "Only owners can manage users.");
-  return uid;
-}
 
 export const createUser = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
   const by = await requireOwner(request);
@@ -116,6 +90,9 @@ export const removeUser = onCall({ ...base, timeoutSeconds: 20 }, async (request
   if (!snap.exists) throw new HttpsError("not-found", "That user is already gone.");
   const email = snap.get("email");
   await ref.delete();
+  // Their place on every guest list goes too (invite links stop working with it).
+  const places = await db.collectionGroup("guests").where("uid", "==", uid).get();
+  for (const place of places.docs) await removeGuestPlace(place.ref.parent.parent.id, uid);
   if (typeof email === "string") await db.collection("loginCodes").doc(codeDocId(email)).delete();
   await auth.deleteUser(uid).catch((error) => { if (error?.code !== "auth/user-not-found") throw error; });
   return { ok: true };
