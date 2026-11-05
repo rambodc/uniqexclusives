@@ -4,10 +4,11 @@ import { signInWithCustomToken } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth, requestCode, verifyCode } from "../core/firebase";
 import { useAuth } from "./AuthContext";
-import { codeDigits, isEmail } from "./roles";
+import { codeDigits, formatCodeInput, isEmail } from "./roles";
 import "../ui/lux.css";
 
-const SENT = "If you're on the list, your code is on its way.";
+const SENT = "Your code is on its way.";
+const NO_ACCOUNT = "There's no account for that email. UEX is invite-only.";
 const RESEND_AFTER_S = 30;
 
 /** Invite-only sign-in: email, then the 6-digit code we email (only to people already on the list). No passwords, no sign-up. */
@@ -25,9 +26,13 @@ export default function SignIn() {
     event?.preventDefault(); setError("");
     if (!isEmail(email)) { setError("Enter a valid email address."); return; }
     setBusy(true);
-    try { await requestCode({ email: email.trim().toLowerCase() }); setStep("code"); setCode(""); setWait(RESEND_AFTER_S); }
-    catch { setError("We couldn't reach the door. Check your connection and try again."); }
-    finally { setBusy(false); }
+    try {
+      await requestCode({ email: email.trim().toLowerCase() });
+      setStep("code"); setCode(""); setWait(RESEND_AFTER_S);
+    } catch (e) {
+      if (e instanceof FirebaseError && e.code === "functions/not-found") setError(NO_ACCOUNT);
+      else setError("We couldn't reach the door. Check your connection and try again.");
+    } finally { setBusy(false); }
   }
   async function verify(value: string) {
     if (value.length !== 6 || busy) return;
@@ -61,8 +66,8 @@ export default function SignIn() {
         <p className="lux-note" role="status">{SENT}<br /><span className="lux-email">{email.trim().toLowerCase()}</span></p>
         <form className="lux-form" onSubmit={(e) => { e.preventDefault(); void verify(code); }}>
           <label htmlFor="code" className="sr-only">6-digit code</label>
-          <input id="code" ref={codeInput} className="lux-code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={7} placeholder="••••••"
-            value={code} onChange={(e) => { const v = codeDigits(e.target.value); setCode(v); if (v.length === 6) void verify(v); }} disabled={busy} />
+          <input id="code" ref={codeInput} className="lux-code" inputMode="numeric" autoComplete="one-time-code" placeholder="000-000" maxLength={7}
+            value={formatCodeInput(code)} onChange={(e) => { const v = codeDigits(e.target.value); setCode(v); if (v.length === 6) void verify(v); }} disabled={busy} />
           {error && <p className="lux-error" role="alert">{error}</p>}
           <button className="lux-button" disabled={busy || code.length !== 6}>{busy ? "Opening the door…" : "Enter"}</button>
         </form>

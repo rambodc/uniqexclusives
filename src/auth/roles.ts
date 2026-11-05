@@ -14,4 +14,9 @@ export function parseUserRecord(data: unknown): UserRecord | null {
 }
 /** Six digits from whatever was typed or pasted ("123 456", "123-456"). */
 export function codeDigits(value: string) { return value.replace(/\D/g, "").slice(0, 6); }
+/** Display form with a dash between the first 3 and last 3 digits. */
+export function formatCodeInput(digits: string) {
+  const d = digits.slice(0, 6);
+  return d.length <= 3 ? d : `${d.slice(0, 3)}-${d.slice(3)}`;
+}
 export function isEmail(value: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()); }
