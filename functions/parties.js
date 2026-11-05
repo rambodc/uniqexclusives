@@ -1,0 +1,105 @@
+// The parties mini app: pure helpers (no Firebase imports, so they are unit-tested directly).
+//  parties/{partyId}                 name, description, photoPath, startsAt, endsAt, dressCode, guestLimit, published, pageSlug,
+//                                    locationRevealed, location (only when revealed, else null), createdAt/By, updatedAt
+//  parties/{partyId}/private/details location (always; owners only)
+//  parties/{partyId}/guests/{uid}    one per invited person (no plus-ones)
+//  parties/{partyId}/requests/{id}   invites a guest asked for, waiting on an owner
+//  parties/{partyId}/tokens/{sha256} personal invite links (hash only; functions only)
+import { createHash, randomBytes } from "node:crypto";
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+export const TIME_ZONE = "America/Edmonton";
+export const GUEST_STATUSES = ["invited", "accepted", "declined"];
+export const MAX_INVITES_PER_GUEST = 20;
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,47}$/;
+const ID_RE = /^[A-Za-z0-9]{8,40}$/;
+
+const text = (value, max) => {
+  if (typeof value !== "string") return "";
+  const t = value.replace(/\r\n/g, "\n").trim();
+  return t.length <= max ? t : null;
+};
+const oneLine = (value, max) => { const t = text(value, max); return t === null ? null : t.replace(/\s+/g, " "); };
+const whole = (value, min, max) => Number.isInteger(value) && value >= min && value <= max;
+
+export function isPartyId(value) { return typeof value === "string" && ID_RE.test(value); }
+
+/**
+ * Checks what an owner typed for a party. Returns { party } with clean fields, or { error } with a message for the form.
+ * startsAt / endsAt are epoch ms; endsAt is optional and must be after startsAt.
+ */
+export function cleanPartyInput(input) {
+  const d = input && typeof input === "object" ? input : {};
+  const name = oneLine(d.name, 120);
+  if (!name) return { error: "Give the party a name." };
+  const description = text(d.description, 4000);
+  if (description === null) return { error: "Keep the description under 4,000 characters." };
+  if (!whole(d.startsAt, Date.UTC(2020, 0, 1), Date.UTC(2100, 0, 1))) return { error: "Pick the date and time." };
+  let endsAt = null;
+  if (d.endsAt !== null && d.endsAt !== undefined && d.endsAt !== "") {
+    if (!whole(d.endsAt, d.startsAt + 1, d.startsAt + 14 * DAY_MS)) return { error: "The end time has to be after the start (within two weeks)." };
+    endsAt = d.endsAt;
+  }
+  const location = text(d.location, 400), dressCode = oneLine(d.dressCode, 120);
+  if (location === null) return { error: "Keep the location under 400 characters." };
+  if (dressCode === null) return { error: "Keep the dress code under 120 characters." };
+  let guestLimit = null;
+  if (d.guestLimit !== null && d.guestLimit !== undefined && d.guestLimit !== "") {
+    if (!whole(d.guestLimit, 1, 5000)) return { error: "The guest limit is a whole number from 1 to 5,000." };
+    guestLimit = d.guestLimit;
+  }
+  let pageSlug = null;
+  if (d.pageSlug) {
+    if (typeof d.pageSlug !== "string" || !SLUG_RE.test(d.pageSlug)) return { error: "That custom page name isn't valid." };
+    pageSlug = d.pageSlug;
+  }
+  let photoPath = null;
+  if (d.photoPath) {
+    if (typeof d.photoPath !== "string" || !/^parties\/[A-Za-z0-9]{8,40}\/[A-Za-z0-9._-]{1,80}$/.test(d.photoPath)) return { error: "That photo isn't valid." };
+    photoPath = d.photoPath;
+  }
+  return { party: { name, description, startsAt: d.startsAt, endsAt, location, dressCode, guestLimit, pageSlug, photoPath, locationRevealed: d.locationRevealed === true, published: d.published === true } };
+}
+
+/** When invite links stop working and RSVPs close for good: the end time, or a day after the start when there is none. */
+export function partyEndMs(startsAt, endsAt) { return typeof endsAt === "number" ? endsAt : startsAt + DAY_MS; }
+
+/** Who an owner is inviting. */
+export function cleanGuestInput(input) {
+  const d = input && typeof input === "object" ? input : {};
+  const name = oneLine(d.name, 80);
+  if (!name) return { error: "Enter their name." };
+  const guestOf = oneLine(d.guestOf, 80);
+  if (guestOf === null) return { error: "Keep Group / Guest of under 80 characters." };
+  const allowance = cleanAllowance(d);
+  if (allowance.error) return allowance;
+  return { guest: { name, guestOf, ...allowance } };
+}
+export function cleanAllowance(d) {
+  const canInvite = d?.canInvite === true;
+  if (!canInvite) return { canInvite: false, inviteLimit: 0 };
+  if (!whole(d.inviteLimit, 1, MAX_INVITES_PER_GUEST)) return { error: `Let them invite between 1 and ${MAX_INVITES_PER_GUEST} people.` };
+  return { canInvite: true, inviteLimit: d.inviteLimit };
+}
+/** Someone a guest wants to bring (they need their own account, so name and email). */
+export function cleanRequestInput(input) {
+  const d = input && typeof input === "object" ? input : {};
+  const name = oneLine(d.name, 80);
+  if (!name) return { error: "Enter their name." };
+  const note = text(d.note, 600);
+  if (note === null) return { error: "Keep the note under 600 characters." };
+  return { request: { name, note } };
+}
+
+/** A personal invite link token: 32 random bytes, base64url. Only its SHA-256 is stored. */
+export function newInviteToken() { return randomBytes(32).toString("base64url"); }
+export function tokenHash(token) { return createHash("sha256").update(token).digest("hex"); }
+export function isInviteToken(value) { return typeof value === "string" && /^[A-Za-z0-9_-]{43}$/.test(value); }
+export function inviteLink(site, partyId, token) { return `${site}/i/${partyId}/${token}`; }
+
+/** "Saturday, December 12, 2026 · 8:00 PM" in Calgary time. */
+export function formatPartyDate(ms) {
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(ms);
+  const time = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", minute: "2-digit" }).format(ms);
+  return `${date} · ${time}`;
+}

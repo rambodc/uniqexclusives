@@ -1,0 +1,19 @@
+/* The party page kit: owner preview bar, placeholder page, RSVP and invite controls (custom pages can reuse or restyle). */
+.party-shell{min-height:100vh;background:#010604}
+.party-preview-bar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:10px max(16px,4vw);background:rgba(6,40,25,.92);border-bottom:1px solid rgba(80,255,170,.35);color:#dff8ea;font-size:13px;backdrop-filter:blur(8px)}
+.party-preview-bar a{color:#7fe7b8;text-decoration:underline;text-underline-offset:3px}
+.kit-placeholder{max-width:760px;margin:24px auto 0;border:1px solid rgba(80,255,170,.2);border-radius:24px;overflow:hidden;background:linear-gradient(170deg,rgba(10,45,29,.7),rgba(3,14,9,.85));box-shadow:0 0 60px rgba(31,211,138,.12)}
+.kit-photo{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.kit-photo-empty{background:radial-gradient(ellipse at 50% 30%,rgba(31,211,138,.25),transparent 70%),#03110b}
+.kit-body{display:grid;gap:16px;padding:30px clamp(18px,5vw,40px) 36px;text-align:center;justify-items:center}
+.kit-body h1{margin:0;font:400 clamp(36px,7vw,54px)/1.05 "Cormorant Garamond",Georgia,serif;color:#effff6;text-shadow:0 0 26px rgba(40,240,150,.3)}
+.kit-facts{display:grid;gap:12px;margin:0;width:100%;max-width:460px}
+.kit-facts div{display:grid;gap:4px}.kit-facts dt{font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.3em;text-transform:uppercase;color:#6fb894}.kit-facts dd{margin:0;color:#dff8ea;font-size:16px;white-space:pre-line}.kit-facts em{color:#8fb9a3}
+.kit-desc{margin:0;max-width:560px;color:#a8cfba;line-height:1.65;white-space:pre-line}
+.kit-rsvp,.kit-invite{display:grid;gap:12px;width:100%;max-width:460px;justify-items:center}
+.kit-invite{margin-top:8px;padding-top:22px;border-top:1px solid rgba(80,255,170,.14)}.kit-invite h3{margin:0;font:400 26px/1.2 "Cormorant Garamond",Georgia,serif;color:#effff6}
+.kit-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.kit-row button{min-width:150px}
+.kit-row .is-on{box-shadow:0 0 0 2px #3be8a0,0 0 30px rgba(40,240,150,.4)}
+.kit-note{margin:0;color:#a8cfba;font-size:15px;line-height:1.5}
+.kit-requests{list-style:none;margin:0;padding:0;width:100%;display:grid;gap:6px}.kit-requests li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid rgba(80,255,170,.12);border-radius:12px;color:#dff8ea}.kit-requests small{color:#8fb9a3}
+.kit-invite .lux-form{text-align:left}
