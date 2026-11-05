@@ -52,16 +52,14 @@ export default function Home() {
       </div>
       <p className={`uex-sub${at(4)}`}>Uniq Exclusives</p>
       <div className={`uex-cta${at(6)}`}>
-        <Link className="uex-invite" to={user ? "/account" : "/signin?mode=signup"}>{user ? "Your invitation" : "Request an invite"}</Link>
-        {!user && <Link className="uex-signin" to="/signin">Already on the list? <u>Sign in</u></Link>}
+        <Link className="uex-invite" to={user ? "/app" : "/signin"}>Enter</Link>
+        <span className="uex-signin">By invitation only</span>
       </div>
     </main>
     <footer className={`uex-companies${at(7)}`} aria-label="The Uniq Group">
-      {COMPANIES.map((c, n) => {
-        const inner = c.logo ? <img src={c.logo.src} alt={c.name} width={c.logo.width} height={c.logo.height} loading="lazy" /> : <span>{c.name}</span>;
-        const style = { transitionDelay: `${n * 160}ms` };
-        return c.url ? <a key={c.id} href={c.url} target="_blank" rel="noopener noreferrer" style={style}>{inner}</a> : <div key={c.id} style={style}>{inner}</div>;
-      })}
+      {COMPANIES.map((c, n) => <a key={c.id} className={`uex-co uex-co-${c.id}`} href={c.url} target="_blank" rel="noopener noreferrer" style={{ transitionDelay: `${n * 160}ms` }} aria-label={`${c.name} (opens in a new tab)`}>
+        <img src={c.logo.src} srcSet={`${c.logo.src} 1x, ${c.logo.src2x} 2x`} alt={c.name} width={c.logo.width} height={c.logo.height} loading="lazy" decoding="async" />
+      </a>)}
     </footer>
   </div>;
 }

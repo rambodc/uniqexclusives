@@ -6,3 +6,5 @@ dist/
 firebase-debug.log
 *.tsbuildinfo
 .firebase/
+functions/.secret.local
+firestore-debug.log
