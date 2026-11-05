@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
-export function Loading() { return <main className="ws-page ws-center"><div className="spinner" aria-label="Loading" /></main>; }
+export function Loading() { return <main className="lux-page lux-center"><div className="spinner" aria-label="Loading" /></main>; }
 export default function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth(), location = useLocation();
+  const { user, loading } = useAuth();
   if (loading) return <Loading />;
-  if (!user) return <Navigate to={`/signin?next=${encodeURIComponent(location.pathname)}`} replace />;
+  if (!user) return <Navigate to="/signin" replace />;
   return <>{children}</>;
 }

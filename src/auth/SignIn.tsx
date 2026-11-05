@@ -1,67 +1,77 @@
-import { useState, type FormEvent } from "react";
-import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db } from "../core/firebase";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { signInWithCustomToken } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
+import { auth, requestCode, verifyCode } from "../core/firebase";
 import { useAuth } from "./AuthContext";
-import { cleanName, safeNext } from "./roles";
-import { authErrorMessage } from "./signInMessages";
+import { codeDigits, isEmail } from "./roles";
+import "../ui/lux.css";
 
-type Mode = "signin" | "signup" | "reset";
-const RESET_SENT = "If there's an account for that email, a reset link is on its way.";
+const SENT = "If you're on the list, your code is on its way.";
+const RESEND_AFTER_S = 30;
 
+/** Invite-only sign-in: email, then the 6-digit code we email (only to people already on the list). No passwords, no sign-up. */
 export default function SignIn() {
-  const { user, loading } = useAuth(), [params] = useSearchParams(), next = safeNext(params.get("next"));
-  const [mode, setMode] = useState<Mode>(params.get("mode") === "signup" ? "signup" : "signin");
-  const [firstName, setFirstName] = useState(""), [lastName, setLastName] = useState(""), [email, setEmail] = useState(""), [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState(false);
-  if (!loading && user && !busy) return <Navigate to={next} replace />;
-  const switchTo = (to: Mode) => { setMode(to); setError(""); setSent(false); };
-  const cleanEmail = () => email.trim().toLowerCase();
+  const { user, loading } = useAuth();
+  const [step, setStep] = useState<"email" | "code">("email");
+  const [email, setEmail] = useState(""), [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [wait, setWait] = useState(0);
+  const codeInput = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (wait <= 0) return; const id = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(id); }, [wait]);
+  useEffect(() => { if (step === "code") codeInput.current?.focus(); }, [step]);
+  if (!loading && user && !busy) return <Navigate to="/app" replace />;
 
-  async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError("");
+  async function send(event?: FormEvent) {
+    event?.preventDefault(); setError("");
+    if (!isEmail(email)) { setError("Enter a valid email address."); return; }
+    setBusy(true);
+    try { await requestCode({ email: email.trim().toLowerCase() }); setStep("code"); setCode(""); setWait(RESEND_AFTER_S); }
+    catch { setError("We couldn't reach the door. Check your connection and try again."); }
+    finally { setBusy(false); }
+  }
+  async function verify(value: string) {
+    if (value.length !== 6 || busy) return;
+    setBusy(true); setError("");
     try {
-      if (mode === "signin") await signInWithEmailAndPassword(auth, cleanEmail(), password);
-      else if (mode === "signup") {
-        const first = cleanName(firstName), last = cleanName(lastName);
-        if (!first || !last) throw { code: "names" };
-        if (password.length < 8) throw { code: "auth/weak-password" };
-        const { user: created } = await createUserWithEmailAndPassword(auth, cleanEmail(), password);
-        await updateProfile(created, { displayName: `${first} ${last}` });
-        await setDoc(doc(db, "users", created.uid), { email: created.email, firstName: first, lastName: last, role: "member", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-        await sendEmailVerification(created).catch(() => undefined);
-      } else {
-        await sendPasswordResetEmail(auth, cleanEmail()).catch(() => undefined);
-        setSent(true);
-      }
-    } catch (cause) {
-      setError(typeof cause === "object" && cause && (cause as { code?: string }).code === "names" ? "Enter your first and last name." : authErrorMessage(cause));
+      const { data } = await verifyCode({ email: email.trim().toLowerCase(), code: value });
+      await signInWithCustomToken(auth, data.token);
+    } catch (e) {
+      setError(e instanceof FirebaseError && (e.code === "functions/permission-denied" || e.code === "functions/invalid-argument")
+        ? "That code isn't right or has expired. Request a new one." : "Something went wrong. Please try again.");
+      setCode(""); codeInput.current?.focus();
     } finally { setBusy(false); }
   }
-
-  const titles: Record<Mode, [string, string]> = {
-    signin: ["Welcome back.", "Sign in to your Uniq Exclusives account."],
-    signup: ["Create your account.", "Join Uniq Exclusives to get your invites and updates in one place."],
-    reset: ["Reset your password.", "Enter your email and we'll send you a link to choose a new password."]
-  };
-  return <main className="auth-page"><Link className="auth-back" to="/">← Back to Uniq Exclusives</Link>
-    <form className="auth-card" onSubmit={submit}>
-      <span className="eyebrow">Uniq Exclusives</span><h1>{titles[mode][0]}</h1><p>{titles[mode][1]}</p>
-      {error && <div className="status error" role="alert">{error}</div>}
-      {sent && <div className="status success" role="status">{RESET_SENT}</div>}
-      {mode === "signup" && <div className="auth-row">
-        <label>First name<input value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" maxLength={60} /></label>
-        <label>Last name<input value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" maxLength={60} /></label>
-      </div>}
-      <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label>
-      {mode !== "reset" && <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 8 : undefined} autoComplete={mode === "signup" ? "new-password" : "current-password"} /></label>}
-      <button className="button-primary full" disabled={busy}>{busy ? "One moment…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : sent ? "Send again" : "Send reset link"}</button>
-      <div className="auth-links">
-        {mode !== "signin" && <button type="button" className="auth-link" onClick={() => switchTo("signin")}>Have an account? Sign in</button>}
-        {mode !== "signup" && <button type="button" className="auth-link" onClick={() => switchTo("signup")}>New here? Create an account</button>}
-        {mode === "signin" && <button type="button" className="auth-link" onClick={() => switchTo("reset")}>Forgot password?</button>}
-      </div>
-    </form>
+  return <main className="lux-page lux-center lux-signin">
+    <div className="lux-aura" aria-hidden="true" />
+    <Link to="/" className="lux-back">← UEX</Link>
+    <section className="lux-card">
+      <img className="lux-globe" src="/brand/uex-globe.webp" alt="" width={900} height={647} />
+      <p className="lux-kicker">Uniq Exclusives</p>
+      {step === "email" ? <>
+        <h1>Are you on the list?</h1>
+        <p className="lux-note">Enter your email. If you're invited, we'll send you a 6-digit code.</p>
+        <form className="lux-form" onSubmit={send} noValidate>
+          <label htmlFor="email" className="sr-only">Email</label>
+          <input id="email" type="email" inputMode="email" autoComplete="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
+          {error && <p className="lux-error" role="alert">{error}</p>}
+          <button className="lux-button" disabled={busy}>{busy ? "Checking the list…" : "Send my code"}</button>
+        </form>
+      </> : <>
+        <h1>Check your email</h1>
+        <p className="lux-note" role="status">{SENT}<br /><span className="lux-email">{email.trim().toLowerCase()}</span></p>
+        <form className="lux-form" onSubmit={(e) => { e.preventDefault(); void verify(code); }}>
+          <label htmlFor="code" className="sr-only">6-digit code</label>
+          <input id="code" ref={codeInput} className="lux-code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={7} placeholder="••••••"
+            value={code} onChange={(e) => { const v = codeDigits(e.target.value); setCode(v); if (v.length === 6) void verify(v); }} disabled={busy} />
+          {error && <p className="lux-error" role="alert">{error}</p>}
+          <button className="lux-button" disabled={busy || code.length !== 6}>{busy ? "Opening the door…" : "Enter"}</button>
+        </form>
+        <div className="lux-links">
+          <button className="lux-link" onClick={() => void send()} disabled={busy || wait > 0}>{wait > 0 ? `Send a new code in ${wait}s` : "Send a new code"}</button>
+          <button className="lux-link" onClick={() => { setStep("email"); setError(""); }}>Use a different email</button>
+        </div>
+      </>}
+    </section>
+    <p className="lux-fine">By invitation only.</p>
   </main>;
 }

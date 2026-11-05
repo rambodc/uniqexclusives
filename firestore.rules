@@ -1,35 +1,23 @@
 rules_version = '2';
 // One top-level collection per mini app. Everything not matched below is closed.
 //
-// users/{uid}: one record per person (see src/auth/roles.ts).
-//   - A signed-in person can read only their own record.
-//   - They can create it once, for themselves, as a "member", with the email of their own account.
-//   - They can change only their first and last name. Role changes are made by an owner.
-//   - Owners can read every record and change anyone's role (the first owner is set by hand in the console).
+// users/{uid}: the invite list, one record per person: { email, name, role, createdAt, createdBy, updatedAt }.
+//   - A signed-in person can read only their own record; owners can read (and list) every record.
+//   - Nobody writes from the browser: owners add and remove people through the createUser / removeUser functions.
+// loginCodes/{sha256(email)}: sign-in code hashes and send history. Only Cloud Functions touch it (closed below).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function isOwner() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && me().role == "owner"; }
-    function validName(n) { return n is string && n.size() > 0 && n.size() <= 60; }
-    function validRole(r) { return r in ["owner", "staff", "member"]; }
+    function isOwner() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "owner";
+    }
 
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
-      allow create: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(["email", "firstName", "lastName", "role", "createdAt", "updatedAt"])
-        && request.resource.data.email == request.auth.token.email
-        && validName(request.resource.data.firstName) && validName(request.resource.data.lastName)
-        && request.resource.data.role == "member"
-        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
-      allow update: if signedIn() && request.resource.data.updatedAt == request.time && (
-        (request.auth.uid == uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["firstName", "lastName", "updatedAt"])
-          && validName(request.resource.data.firstName) && validName(request.resource.data.lastName))
-        || (isOwner() && request.auth.uid != uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["role", "updatedAt"])
-          && validRole(request.resource.data.role)));
-      allow delete: if false;
+      allow get: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow list: if isOwner();
+      allow write: if false;
     }
 
     match /{document=**} { allow read, write: if false; }

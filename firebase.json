@@ -1,6 +1,7 @@
 {
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json", "location": "nam5" },
-  "auth": { "providers": { "emailPassword": true } },
+  "auth": { "providers": { "emailPassword": false } },
+  "functions": [{ "source": "functions", "codebase": "default", "runtime": "nodejs22", "ignore": ["node_modules", "test", ".git", "*.log"] }],
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
@@ -14,8 +15,9 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
       ] },
       { "source": "/signin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
-      { "source": "/account", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+      { "source": "/app", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
     ],
     "rewrites": [{ "source": "**", "destination": "/index.html" }]
-  }
+  },
+  "emulators": { "auth": { "port": 9099 }, "firestore": { "port": 8080 }, "functions": { "port": 5001 }, "ui": { "enabled": false }, "singleProjectMode": true }
 }

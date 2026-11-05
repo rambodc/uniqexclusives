@@ -1,31 +1,42 @@
 # Uniq Exclusives
 
-Website and app for Uniq Exclusives (uniqexclusives.com): the Uniq Group's home (Uniquem, UniqEnergy Solutions, Kemko, Al Chem), the UEX event series, and sign-in for members, staff and owners. Vite + React + TypeScript, Firebase Hosting, Firestore and Firebase Authentication (email and password). Firebase project: `uniqexclusives`.
+Website and app for Uniq Exclusives (uniqexclusives.com): the Uniq Group's home (Uniquem, UniqEnergy Solutions, Kemko, Al Chem), the UEX event series, and invite-only sign-in with a 6-digit email code (no passwords, no public sign-up). Vite + React + TypeScript, Firebase Hosting, Firestore, Cloud Functions (2nd gen) and Firebase Authentication (custom tokens). Firebase project: `uniqexclusives`.
 
 ## Branches and deploys
 `production` is the default branch. Work happens on a branch and lands through a pull request, which runs lint, build and tests (`pull-request.yml`). Merging to `production` deploys:
 - **Hosting** (`firebase-hosting.yml`) when app files change.
-- **Firestore rules and indexes** (`firebase-rules.yml`) when `firestore.rules`, `firestore.indexes.json` or `firebase.json` change. Auth providers (`auth` in `firebase.json`) are deployed by hand with `firebase deploy --only auth`, because turning on a provider can enable Google APIs, which the CI deployer is not allowed to do.
-
-Cloud Functions are not set up yet: they need the Blaze plan. When billing is linked, add `functions/` and a `firebase-functions.yml` like Uniquem's (and grant the deployer `roles/cloudfunctions.admin` and `roles/artifactregistry.admin`).
+- **Firestore rules and indexes** (`firebase-rules.yml`) when `firestore.rules`, `firestore.indexes.json` or `firebase.json` change. Auth providers (`auth` in `firebase.json`; every provider is off, sign-in is by custom token) are deployed by hand with `firebase deploy --only auth`.
+- **Cloud Functions** (`firebase-functions.yml`) when `functions/**` changes.
 
 ## CI identity
 GitHub Actions signs in to Google Cloud with Workload Identity Federation, so there is no key file. The `Prod` environment holds:
 - `GCP_WIF_PROVIDER`: the `github-actions` pool's `github-uniqexclusives` provider, which only trusts `rambodc/uniqexclusives`.
-- `GCP_SERVICE_ACCOUNT_EMAIL`: `github-deployer@uniqexclusives.iam.gserviceaccount.com` (`roles/firebase.admin`, `roles/iam.serviceAccountUser`).
+- `GCP_SERVICE_ACCOUNT_EMAIL`: `github-deployer@uniqexclusives.iam.gserviceaccount.com` (`roles/firebase.admin`, `roles/iam.serviceAccountUser`; deploying functions may also need `roles/cloudfunctions.admin`, `roles/run.admin`, `roles/artifactregistry.admin` and `roles/secretmanager.viewer`).
 - `VITE_FIREBASE_*`: the public web app config (same values as `.env.example`).
 
-## Users and roles
-One record per person at `users/{Firebase Auth uid}`: `email`, `firstName`, `lastName`, `role` (`owner`, `staff` or `member`), `createdAt`, `updatedAt`.
-- Signing up creates the Auth account and the record together, always as `member`, and sends a verification email.
-- People can read their own record and change only their names. Owners can read every record and change other people's roles.
-- **First owner:** in the Firestore console, set `role` to `owner` on your own `users/{uid}` record.
+## Sign-in (invite only)
+1. `/signin`: the person types their email and the `requestCode` function runs. Only if a `users` record has that email does it make a 6-digit code, store its salted HMAC, expiry (10 min) and attempt count in `loginCodes/{sha256(email)}`, and email it through Resend from `Uniq Exclusives <website@uniquem.ca>` (max 5 code emails per address per hour). The reply is always `{ ok: true }` and takes at least 1.5 s, so nobody can tell who is on the list.
+2. The person types the code; `verifyCode` checks it (5 wrong tries burn it, it works once), makes sure the Auth account exists with the `users` record's uid, and returns a custom token; the browser signs in with `signInWithCustomToken`. `verifyCode` runs as `firebase-adminsdk-fbsvc@`, which can sign tokens.
 
-Firestore keeps one top-level collection per mini app (today only `users`); everything else is closed in `firestore.rules`.
+The email is `functions/email.js` (tables and inline styles for Gmail, Apple Mail and Outlook; the globe is `public/brand/email/uex-globe@2x.png`).
+
+**Secret:** `RESEND_API_KEY` in Secret Manager (a sending-only key for the `uniquem.ca` domain). Set it with `firebase functions:secrets:set RESEND_API_KEY --project uniqexclusives`, then redeploy functions (run the *Production - Firebase Functions* workflow) so they pick up the new version. Never commit it or put it in a GitHub secret.
+
+## Users and roles
+One record per person at `users/{Firebase Auth uid}`: `email`, `name`, `role` (`owner`, `staff` or `member`), `createdAt`, `createdBy`, `updatedAt`.
+- There is no public sign-up. Owners add and remove people on `/app` (the `createUser` and `removeUser` functions, which also create or delete the Auth account).
+- People can read only their own record; owners can list everyone. Nobody writes `users` from the browser.
+- Owners see the list on `/app`; everyone else sees a simple welcome for now.
+
+Firestore keeps one top-level collection per mini app (`users`, and `loginCodes` for sign-in, which clients can never read); everything else is closed in `firestore.rules`.
+
+## Brand
+- Favicon and app icons (`public/favicon.ico`, `public/icons/`) are the Uniq globe, the same `uniquem-mark` the Uniquem site uses.
+- Company logos: `brand-src/originals` are the files as supplied; `python3 brand-src/make_logos.py` writes transparent masters (`brand-src/masters`) and the site files (`public/brand/companies`, 1x and 2x): `<id>.png` is the untouched artwork on transparent, `<id>-dark.png` turns only the black and grey parts white for the dark page. Uniquem always comes first.
 
 ## Local development
 ```
 npm ci
 npm run dev
 ```
-`VITE_USE_EMULATORS=true npm run dev` uses the Firebase emulators instead of production.
+`VITE_USE_EMULATORS=true VITE_FIREBASE_PROJECT_ID=demo-uex npm run dev` uses the Firebase emulators (`firebase emulators:start --project demo-uex --only auth,firestore,functions`) instead of production; `node scripts/e2e-emulator.mjs` runs the end-to-end sign-in and admin test against them.

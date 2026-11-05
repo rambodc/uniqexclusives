@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { browserLocalPersistence, connectAuthEmulator, getAuth, setPersistence } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
 
 // Web config for the uniqexclusives Firebase project. These values are public by design (Firebase web config);
 // CI passes the same values as VITE_FIREBASE_* secrets, and these are the fallbacks for local builds.
@@ -15,8 +16,14 @@ const app = initializeApp({
 export const auth = getAuth(app);
 export const authReady = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
 export const db = getFirestore(app);
+const functions = getFunctions(app, "us-central1");
 // Local testing only: `VITE_USE_EMULATORS=true npm run dev` talks to the Firebase emulators instead of production.
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 }
+export const requestCode = httpsCallable<{ email: string }, { ok: true }>(functions, "requestCode");
+export const verifyCode = httpsCallable<{ email: string; code: string }, { token: string }>(functions, "verifyCode");
+export const createUser = httpsCallable<{ email: string; name: string; role: string }, { uid: string }>(functions, "createUser");
+export const removeUser = httpsCallable<{ uid: string }, { ok: true }>(functions, "removeUser");

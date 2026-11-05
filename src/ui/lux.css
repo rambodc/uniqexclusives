@@ -1,0 +1,44 @@
+/* Sign-in and the signed-in area: the same black-emerald world as the UEX home, no yellow. */
+@import "@fontsource/cinzel/500.css";
+@import "@fontsource/cormorant-garamond/400.css";
+@import "@fontsource/cormorant-garamond/400-italic.css";
+.lux-page{position:relative;min-height:100vh;min-height:100svh;padding:0 max(18px,4vw) 60px;background:#010604;color:#e8fff3;overflow:hidden;isolation:isolate}
+.lux-center{display:grid;place-items:center;align-content:center;gap:18px;padding-top:56px}
+.lux-aura{position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 60% 45% at 50% 18%,rgba(31,211,138,.20),transparent 70%),radial-gradient(ellipse 40% 30% at 15% 90%,rgba(20,150,95,.10),transparent 70%),radial-gradient(ellipse 40% 30% at 85% 90%,rgba(20,150,95,.10),transparent 70%)}
+.lux-back{position:absolute;top:18px;left:max(18px,4vw);color:#8fc8aa;font:500 13px/1 Cinzel,Georgia,serif;letter-spacing:.3em}.lux-back:hover{color:#dfffee}
+.lux-card{width:min(430px,100%);display:grid;justify-items:center;gap:12px;padding:38px 30px 32px;text-align:center;border:1px solid rgba(80,255,170,.22);border-radius:24px;background:linear-gradient(170deg,rgba(10,45,29,.78),rgba(3,14,9,.86));box-shadow:0 0 60px rgba(31,211,138,.12),inset 0 1px 0 rgba(160,255,210,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.lux-globe{width:92px;height:auto;filter:drop-shadow(0 0 22px rgba(40,240,150,.45))}
+.lux-kicker{margin:0;font:500 11px/1 Cinzel,Georgia,serif;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#8fd8b2}
+.lux-card h1,.lux-panel h1{margin:4px 0 0;font:400 34px/1.15 "Cormorant Garamond",Georgia,serif;letter-spacing:.01em;color:#effff6;text-shadow:0 0 22px rgba(40,240,150,.25)}
+.lux-panel h2{margin:0 0 4px;font:400 26px/1.2 "Cormorant Garamond",Georgia,serif}
+.lux-note{margin:0;color:#a8cfba;line-height:1.55;font-size:15px}.lux-email{color:#e8fff3;font-weight:600;word-break:break-all}
+.lux-form{width:100%;display:grid;gap:12px;margin-top:10px}
+.lux-form label{display:grid;gap:6px;text-align:left;font-size:13px;color:#a8cfba}
+.lux-form input,.lux-form select{width:100%;min-height:50px;padding:0 16px;border:1px solid rgba(80,255,170,.25);border-radius:12px;background:rgba(1,10,6,.75);color:#effff6;font:16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;outline:0;transition:border-color .2s,box-shadow .2s}
+.lux-form input:focus,.lux-form select:focus{border-color:#4dffb0;box-shadow:0 0 0 3px rgba(60,255,160,.15),0 0 22px rgba(60,255,160,.18)}
+.lux-form input::placeholder{color:#4c7a62}
+.lux-code{text-align:center;font:600 34px/1 "SF Mono",Menlo,Consolas,monospace!important;letter-spacing:.42em;padding-left:.42em!important;min-height:66px!important}
+.lux-button{position:relative;min-height:52px;padding:0 28px;border:1px solid rgba(80,255,170,.75);border-radius:12px;background:linear-gradient(180deg,rgba(20,110,66,.65),rgba(6,48,29,.75));color:#f0fff7;font:500 15px/1 Cinzel,Georgia,serif;letter-spacing:.18em;text-transform:uppercase;box-shadow:0 0 22px rgba(40,240,150,.3),inset 0 0 14px rgba(40,240,150,.18);cursor:pointer;transition:box-shadow .25s,background .25s}
+.lux-button:hover:not(:disabled){box-shadow:0 0 34px rgba(40,240,150,.55),inset 0 0 18px rgba(40,240,150,.3)}.lux-button:disabled{opacity:.55;cursor:default}
+.lux-error{margin:0;padding:10px 12px;border-radius:10px;background:rgba(220,70,70,.12);color:#ffb7b7;font-size:14px;line-height:1.45}
+.lux-ok{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:rgba(31,211,138,.12);color:#a6f3cf;font-size:14px;line-height:1.45}
+.lux-links{display:grid;gap:2px;margin-top:4px}
+.lux-link{padding:6px;border:0;background:none;color:#7fe7b8;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.lux-link:disabled{color:#4f7d65;text-decoration:none;cursor:default}
+.lux-fine{margin:0;font:italic 400 16px/1 "Cormorant Garamond",Georgia,serif;color:#5f8d75}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lux-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:980px;margin:0 auto;padding:16px 0 26px}
+.lux-brand{display:flex;align-items:center;gap:10px;font:500 22px/1 Cinzel,Georgia,serif;letter-spacing:.14em;color:#d9fbe9;text-shadow:0 0 16px rgba(40,240,150,.35)}.lux-brand img{width:44px;height:auto}
+.lux-bar-right{display:flex;align-items:center;gap:10px}
+.lux-ghost{min-height:40px;padding:0 16px;border:1px solid rgba(80,255,170,.3);border-radius:10px;background:transparent;color:#cfeedd;font-size:14px;cursor:pointer}.lux-ghost:hover:not(:disabled){border-color:#4dffb0;color:#fff}.lux-ghost.small{min-height:34px;padding:0 12px;font-size:13px}.lux-ghost:disabled{opacity:.5}
+.lux-chip{display:inline-block;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(80,255,170,.3);color:#a6f3cf}.lux-chip.role-owner{background:rgba(31,211,138,.18);border-color:#3be8a0;color:#eafff3}.lux-chip.role-staff{background:rgba(31,211,138,.08)}
+.lux-panel{max-width:980px;margin:0 auto 18px;padding:28px;border:1px solid rgba(80,255,170,.18);border-radius:22px;background:linear-gradient(170deg,rgba(10,45,29,.6),rgba(3,14,9,.75))}
+.lux-welcome{max-width:560px;margin-top:8vh;text-align:center;display:grid;gap:10px;padding:46px 30px}.lux-welcome p{margin:0;color:#a8cfba}
+.lux-admin{display:grid;gap:4px}.lux-admin>.lux-panel{width:100%}
+.lux-users{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
+.lux-users li{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(80,255,170,.12);border-radius:14px;background:rgba(1,10,6,.5)}
+.lux-avatar{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#1fb37a,#0a3f29);color:#fff;font-weight:700;font-size:14px}
+.lux-who{display:grid;gap:2px;min-width:0}.lux-who strong{font-weight:600;color:#effff6}.lux-who small{color:#8fb9a3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lux-you{font-size:12px;color:#6f9a84;padding:0 12px}
+.lux-add{grid-template-columns:2fr 1.5fr 1fr auto;align-items:end;margin-top:12px}
+.spinner{width:34px;height:34px;margin:12px auto;border:3px solid rgba(80,255,170,.18);border-top-color:#3be8a0;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:720px){.lux-add{grid-template-columns:1fr}.lux-users li{grid-template-columns:auto 1fr auto;}.lux-users li .lux-chip{display:none}.lux-panel{padding:22px 16px}.lux-card{padding:32px 20px 26px}}
