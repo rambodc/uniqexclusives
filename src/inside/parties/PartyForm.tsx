@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { collection, doc, getDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { FirebaseError } from "firebase/app";
-import { db, deleteParty, saveParty } from "../../core/firebase";
+import { db, deleteParty, errorText, saveParty } from "../../core/firebase";
 import { storage } from "../../core/storage";
 import { fromLocalInput, parseParty, toLocalInput } from "../../parties/model";
 import { PAGE_SLUGS } from "../../parties/registry";
@@ -11,7 +11,7 @@ import { preparePhoto } from "./photo";
 import { useConfirm } from "../../ui/Confirm";
 import { Busy, GlobeLoader } from "../../ui/Loader";
 
-const say = (e: unknown) => e instanceof FirebaseError && e.message && !e.message.startsWith("internal") ? e.message : e instanceof Error ? e.message : "Something went wrong. Please try again.";
+const say = (e: unknown) => e instanceof Error && !(e instanceof FirebaseError) ? e.message : errorText(e);
 type Form = { name: string; description: string; startsAt: string; endsAt: string; rsvpDeadline: string; location: string; locationRevealed: boolean; dressCode: string; guestLimit: string; published: boolean; pageSlug: string; photoPath: string | null };
 const EMPTY: Form = { name: "", description: "", startsAt: "", endsAt: "", rsvpDeadline: "", location: "", locationRevealed: false, dressCode: "", guestLimit: "", published: false, pageSlug: "", photoPath: null };
 

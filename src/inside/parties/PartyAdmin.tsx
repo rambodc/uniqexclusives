@@ -2,8 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { collection, doc, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
-import { FirebaseError } from "firebase/app";
-import { db, decideRequest, inviteGuest, inviteLinkFor, reinviteGuest, remindAll, removeGuest, resendInvite, setStaffParty, updateGuest } from "../../core/firebase";
+import { db, decideRequest, errorText as say, inviteGuest, inviteLinkFor, reinviteGuest, remindAll, removeGuest, resendInvite, setStaffParty, updateGuest } from "../../core/firebase";
 import { storage } from "../../core/storage";
 import { GENDER_LABELS, isEmail, parseUserRecord, type Gender, type UserRecord } from "../../auth/roles";
 import {
@@ -15,7 +14,6 @@ import { useConfirm } from "../../ui/Confirm";
 import GenderPicker from "../../ui/GenderPicker";
 import { Busy, GlobeLoader } from "../../ui/Loader";
 
-const say = (e: unknown) => e instanceof FirebaseError && e.message && !e.message.startsWith("internal") ? e.message : "Something went wrong. Please try again.";
 type Status = { ok: boolean; text: string; link?: string } | null;
 type Act = (key: string, run: () => Promise<Status>) => Promise<void>;
 const initials = (name: string) => name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();

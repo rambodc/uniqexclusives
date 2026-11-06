@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { FirebaseError, initializeApp } from "firebase/app";
 import { browserLocalPersistence, connectAuthEmulator, getAuth, setPersistence } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from "firebase/functions";
@@ -58,3 +58,7 @@ export const openInvite = httpsCallable<{ partyId: string; token: string }, Invi
 export const enterInvite = httpsCallable<{ partyId: string; token: string; code: string }, { token: string }>(functions, "enterInvite");
 export const rsvp = httpsCallable<{ partyId: string; status: "accepted" | "declined" }, { status: string }>(functions, "rsvp");
 export const requestInvite = httpsCallable<{ partyId: string; name: string; email: string; gender: Gender; note: string }, { id: string }>(functions, "requestInvite");
+
+/** A callable's message for people: the SDK's " [403]" suffix dropped, internal errors replaced. */
+export const errorText = (e: unknown, fallback = "Something went wrong. Please try again.") =>
+  e instanceof FirebaseError && !e.message.startsWith("internal") ? e.message.replace(/ \[\d+\]$/, "") : fallback;

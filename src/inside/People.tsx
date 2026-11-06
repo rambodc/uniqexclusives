@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { FirebaseError } from "firebase/app";
-import { createUser, db, removeUser, setStaffParty, setUserRole } from "../core/firebase";
+import { createUser, db, errorText as message, removeUser, setStaffParty, setUserRole } from "../core/firebase";
 import { useAuth } from "../auth/AuthContext";
 import { GENDER_LABELS, ROLES, ROLE_LABELS, isEmail, parseUserRecord, type Gender, type Role, type UserRecord } from "../auth/roles";
 import { parseParty, type Party } from "../parties/model";
@@ -10,7 +9,6 @@ import GenderPicker from "../ui/GenderPicker";
 import { Busy, GlobeLoader } from "../ui/Loader";
 
 type Row = UserRecord & { uid: string };
-const message = (e: unknown) => e instanceof FirebaseError && e.message && !e.message.startsWith("internal") ? e.message : "Something went wrong. Please try again.";
 
 /** Owners only (/app/people): everyone on the list, add someone, change a role, assign staff to their one party, remove someone. */
 export default function People() {

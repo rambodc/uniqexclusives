@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { signInWithCustomToken, signOut } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { auth, enterInvite, openInvite, type InviteTeaser } from "../core/firebase";
+import { auth, enterInvite, errorText, openInvite, type InviteTeaser } from "../core/firebase";
 import { codeDigits, formatCodeInput } from "../auth/roles";
 import { formatWhen } from "./model";
 import Countdown from "./kit/Countdown";
@@ -12,7 +12,7 @@ import "./kit/kit.css";
 
 const RESEND_AFTER_S = 30;
 const LIMITED = "We've sent several codes in the last hour. Use the newest one in your inbox, or try again a bit later.";
-const message = (e: unknown, fallback: string) => e instanceof FirebaseError && e.code === "functions/permission-denied" ? e.message : fallback;
+const message = (e: unknown, fallback: string) => e instanceof FirebaseError && e.code === "functions/permission-denied" ? errorText(e) : fallback;
 
 /**
  * /i/:partyId/:token — a personal invite link. It never signs anyone in by itself: it shows the invitation, emails that guest a
