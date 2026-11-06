@@ -12,8 +12,8 @@ import { sendLoginCode, tokenFor, useLoginCode } from "./login.js";
 import { removeGuestPlace } from "./parties-api.js";
 import { isGender, isPartyId } from "./parties.js";
 import { runSweep } from "./sweep.js";
-import { cleanName, isRole } from "./users.js";
-import { TOKEN_SIGNER, auth, base, db, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
+import { cleanNames, isRole } from "./users.js";
+import { TOKEN_SIGNER, auth, authUidFor, base, db, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
 
 export * from "./parties-api.js";
 const BAD_CODE = "That code isn't right or has expired. Request a new one.";
@@ -33,7 +33,7 @@ export const verifyCode = onCall({ ...base, timeoutSeconds: 20, serviceAccount: 
   if (!email || !code || !(await useLoginCode(email, code))) throw new HttpsError("permission-denied", BAD_CODE);
   const user = await findUserByEmail(email);
   if (!user) throw new HttpsError("permission-denied", BAD_CODE);
-  return { token: await tokenFor(user.id, email, user.get("name")) };
+  return { token: await tokenFor(user, email) };
 });
 
 /** A staff member's one party (or null), checked to exist. */
@@ -45,17 +45,15 @@ async function staffParty(role, partyId) {
 
 export const createUser = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
   const by = await requireOwner(request);
-  const email = normalizeEmail(request.data?.email), name = cleanName(request.data?.name), role = request.data?.role, gender = request.data?.gender;
+  const email = normalizeEmail(request.data?.email), names = cleanNames(request.data), role = request.data?.role, gender = request.data?.gender;
   if (!email) throw new HttpsError("invalid-argument", "Enter a valid email address.");
-  if (!name) throw new HttpsError("invalid-argument", "Enter a name.");
+  if (names.error) throw new HttpsError("invalid-argument", names.error);
   if (!isGender(gender)) throw new HttpsError("invalid-argument", "Pick male or female.");
   if (!isRole(role)) throw new HttpsError("invalid-argument", "Pick a role.");
   const staffPartyId = await staffParty(role, request.data?.staffPartyId);
   if (await findUserByEmail(email)) throw new HttpsError("already-exists", "That email is already on the list.");
-  let uid;
-  try { uid = (await auth.getUserByEmail(email)).uid; }
-  catch (error) { if (error?.code !== "auth/user-not-found") throw error; uid = (await auth.createUser({ email, emailVerified: true, displayName: name })).uid; }
-  await db.collection("users").doc(uid).set({ email, name, gender, role, staffPartyId, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
+  const uid = await authUidFor(email, `${names.firstName} ${names.lastName}`);
+  await db.collection("users").doc(uid).set({ email, ...names, gender, role, staffPartyId, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
   return { uid };
 });
 

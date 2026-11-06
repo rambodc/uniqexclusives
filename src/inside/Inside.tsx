@@ -51,7 +51,7 @@ export default function Inside() {
           <p>Once the owner assigns you to a party, its guest list opens here.</p>
         </section>
       : <Routes>
-        <Route index element={<MemberHome name={record.name} />} />
+        <Route index element={<MemberHome firstName={record.firstName} />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>}
   </main>;

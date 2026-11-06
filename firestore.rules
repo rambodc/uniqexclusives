@@ -2,7 +2,7 @@ rules_version = '2';
 // One top-level collection per mini app. Everything not matched below is closed. Nobody writes from the browser:
 // every change goes through a Cloud Function (functions/index.js, functions/parties-api.js).
 //
-// users/{uid}: the invite list, one record per person: { email, name, gender, role, staffPartyId, createdAt, createdBy, updatedAt }.
+// users/{uid}: the invite list, one record per person: { email, firstName, lastName, gender, role, staffPartyId, createdAt, createdBy, updatedAt }.
 //   - A signed-in person can read only their own record; owners can read (and list) every record.
 // loginCodes/{sha256(email)}: sign-in code hashes and send history. Only Cloud Functions touch it (closed below).
 // parties/{partyId}: the parties mini app.

@@ -65,10 +65,12 @@
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6 0 0 0 0 1 0 0 0 0 .8 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(170deg,rgba(14,44,32,.78),rgba(3,13,9,.9));
   box-shadow:0 0 60px rgba(31,211,138,.08),inset 0 1px 0 rgba(160,255,210,.08)}
 .gg-tablet{margin-top:-40px;padding:26px clamp(18px,4vw,36px)}
-.gg-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:0;text-align:center}
+.gg-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin:0;text-align:center}
 .gg-facts div{display:grid;gap:8px;align-content:start}.gg-facts div+div{border-left:1px solid rgba(80,255,170,.14)}
 .gg-facts dt{font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.34em;text-transform:uppercase;color:#6fb894}
-.gg-facts dd{margin:0;font:400 20px/1.35 "Cormorant Garamond",Georgia,serif;color:#effff6;white-space:pre-line}.gg-facts em{color:#9cc9b2}
+.gg-facts dd{margin:0;font:400 28px/1.25 "Cormorant Garamond",Georgia,serif;color:#f2fff8;white-space:pre-line;text-shadow:0 0 20px rgba(60,255,170,.25)}.gg-facts em{color:#9cc9b2}
+.gg-time{display:block;margin-top:6px;font:500 14px/1.3 Cinzel,Georgia,serif;letter-spacing:.22em;text-transform:uppercase;color:#9fe8c2;text-shadow:none}
+.gg-dress{margin:18px 0 0;padding-top:14px;border-top:1px solid rgba(80,255,170,.12);text-align:center;font:400 16px/1.4 "Cormorant Garamond",Georgia,serif;color:#cfeedd}.gg-dress span{margin-right:8px;font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.34em;text-transform:uppercase;color:#6fb894}.gg-dress em{color:#9cc9b2}
 .gg-map{display:inline-block;margin-top:6px;color:#7fe7b8;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;text-underline-offset:3px}
 .gg-panel{padding:clamp(26px,5vw,44px) clamp(20px,5vw,48px);text-align:center;display:grid;justify-items:center;gap:12px}
 .gg-panel h2{margin:0;font:400 clamp(30px,5vw,44px)/1.1 "Cormorant Garamond",Georgia,serif;color:#effff6;text-shadow:0 0 24px rgba(40,240,150,.25)}

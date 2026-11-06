@@ -4,7 +4,8 @@ import { formatReplyBy, timeLeft, type GuestStatus } from "../model";
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
- * The RSVP countdown for any party page: "13 days left" with a glowing, pulsing number. In the last 3 days it turns urgent and
+ * The RSVP countdown for any party page, labelled "Time left to reply" so it never reads as the party's own date: "13 days left"
+ * with a glowing, pulsing number. In the last 3 days it turns urgent and
  * ticks every second. Once the deadline passes it shows "Expired, not coming". Shows nothing for a guest who already answered.
  */
 export default function Countdown({ deadline, status = "invited" }: { deadline: Date; status?: GuestStatus }) {
@@ -25,15 +26,15 @@ export default function Countdown({ deadline, status = "invited" }: { deadline: 
   </div>;
 
   if (!left.urgent) return <div className="kit-cd" role="timer" aria-label={`${left.days} days left to reply, until ${date}`}>
-    <p className="kit-cd-kicker">Reply by {date}</p>
+    <p className="kit-cd-kicker">Time left to reply</p>
     <p className="kit-cd-big"><span className="kit-cd-num" key={left.days}>{left.days}</span><span className="kit-cd-unit">{left.days === 1 ? "day left" : "days left"}</span></p>
     <div className="kit-cd-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, Math.max(6, (1 - left.ms / (30 * 86_400_000)) * 100))}%` }} /></div>
-    <p className="kit-cd-copy">Answer by {date}, {time}. After that the invitation expires and the spot goes to someone else.</p>
+    <p className="kit-cd-copy">Please reply by {date}, {time}. Unanswered invitations expire.</p>
   </div>;
 
   const parts = [...(left.days ? [[left.days, left.days === 1 ? "day" : "days"] as const] : []), [left.hours, "hours"] as const, [left.minutes, "min"] as const, [left.seconds, "sec"] as const];
   return <div className="kit-cd is-urgent" role="timer" aria-label={`Your invitation expires ${date} at ${time}`}>
-    <p className="kit-cd-kicker">Last chance to reply</p>
+    <p className="kit-cd-kicker">Time left to reply · last chance</p>
     <div className="kit-cd-tiles" aria-hidden="true">{parts.map(([n, unit], i) => <span key={unit} className={`kit-cd-tile${i === parts.length - 1 ? " is-tick" : ""}`}>
       <b key={i === parts.length - 1 ? n : undefined}>{unit === "days" || unit === "day" ? n : pad(n)}</b><small>{unit}</small>
     </span>)}</div>

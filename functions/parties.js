@@ -2,10 +2,12 @@
 //  parties/{partyId}                 name, description, photoPath, startsAt, endsAt, rsvpDeadline, dressCode, guestLimit, published, pageSlug,
 //                                    locationRevealed, location (only when revealed, else null), summarySentAt, createdAt/By, updatedAt
 //  parties/{partyId}/private/details location (always; owners only)
-//  parties/{partyId}/guests/{uid}    one per invited person (no plus-ones): gender, status, sendCount, rsvpDeadline (a re-invite's own deadline, else null)
-//  parties/{partyId}/requests/{id}   invites a guest asked for, waiting on an owner
+//  parties/{partyId}/guests/{uid}    one per invited person (no plus-ones): firstName, lastName, email, gender, guestOf, status, sendCount,
+//                                    rsvpDeadline (a re-invite's own deadline, else null), invitedBy/invitedByName, note
+//  parties/{partyId}/requests/{id}   invites a guest asked for, waiting on an owner: by, byName, firstName, lastName, email, gender, note, status
 //  parties/{partyId}/tokens/{sha256} personal invite links (hash only; functions only)
 import { createHash, randomBytes } from "node:crypto";
+import { cleanNames } from "./users.js";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const TIME_ZONE = "America/Edmonton";
@@ -90,14 +92,14 @@ export function isGender(value) { return GENDERS.includes(value); }
 /** Who an owner or staff member is inviting. */
 export function cleanGuestInput(input) {
   const d = input && typeof input === "object" ? input : {};
-  const name = oneLine(d.name, 80);
-  if (!name) return { error: "Enter their name." };
+  const names = cleanNames(d);
+  if (names.error) return names;
   const guestOf = oneLine(d.guestOf, 80);
   if (guestOf === null) return { error: "Keep Group / Guest of under 80 characters." };
   if (!isGender(d.gender)) return { error: "Pick male or female." };
   const allowance = cleanAllowance(d);
   if (allowance.error) return allowance;
-  return { guest: { name, guestOf, gender: d.gender, ...allowance } };
+  return { guest: { ...names, guestOf, gender: d.gender, ...allowance } };
 }
 export function cleanAllowance(d) {
   const canInvite = d?.canInvite === true;
@@ -105,15 +107,15 @@ export function cleanAllowance(d) {
   if (!whole(d.inviteLimit, 1, MAX_INVITES_PER_GUEST)) return { error: `Let them invite between 1 and ${MAX_INVITES_PER_GUEST} people.` };
   return { canInvite: true, inviteLimit: d.inviteLimit };
 }
-/** Someone a guest wants to bring (they need their own account, so name and email). */
+/** Someone a guest wants to bring (they need their own account, so first and last name and email). */
 export function cleanRequestInput(input) {
   const d = input && typeof input === "object" ? input : {};
-  const name = oneLine(d.name, 80);
-  if (!name) return { error: "Enter their name." };
+  const names = cleanNames(d);
+  if (names.error) return names;
   const note = text(d.note, 600);
   if (note === null) return { error: "Keep the note under 600 characters." };
   if (!isGender(d.gender)) return { error: "Pick male or female." };
-  return { request: { name, note, gender: d.gender } };
+  return { request: { ...names, note, gender: d.gender } };
 }
 
 /** A personal invite link token: 32 random bytes, base64url. Only its SHA-256 is stored. */
@@ -129,12 +131,15 @@ export function maskEmail(email) {
   return `${local.slice(0, local.length > 3 ? 2 : 1)}•••${email.slice(at)}`;
 }
 
-/** "Saturday, December 12, 2026 · 8:00 PM" in Calgary time. */
-export function formatPartyDate(ms) {
-  const date = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(ms);
-  const time = new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", minute: "2-digit" }).format(ms);
-  return `${date} · ${time}`;
+/** { date: "Saturday, December 12, 2026", time: "8:00 PM" } in Calgary time. */
+export function partyWhen(ms) {
+  return {
+    date: new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(ms),
+    time: new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "numeric", minute: "2-digit" }).format(ms)
+  };
 }
+/** "Saturday, December 12, 2026 · 8:00 PM" in Calgary time. */
+export function formatPartyDate(ms) { const { date, time } = partyWhen(ms); return `${date} · ${time}`; }
 
 /** "Fri, Nov 27" and "8:00 PM" in Calgary time, for "Reply by …". */
 export function formatReplyBy(ms) {

@@ -4,7 +4,6 @@ import { signInWithCustomToken, signOut } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth, enterInvite, errorText, openInvite, type InviteTeaser } from "../core/firebase";
 import { codeDigits, formatCodeInput } from "../auth/roles";
-import { formatWhen } from "./model";
 import Countdown from "./kit/Countdown";
 import { Busy, CardOverlay, GlobeLoader } from "../ui/Loader";
 import "../ui/lux.css";
@@ -12,6 +11,15 @@ import "./kit/kit.css";
 
 const RESEND_AFTER_S = 30;
 const LIMITED = "We've sent several codes in the last hour. Use the newest one in your inbox, or try again a bit later.";
+/** The party's date and time as the headline, then the place (hidden until revealed), then a small dress code. */
+function Facts({ invite }: { invite: InviteTeaser }) {
+  return <div className="lux-invite-facts">
+    <p className="lux-invite-date">{invite.when.date}</p>
+    <p className="lux-invite-time">{invite.when.time}</p>
+    <p className="lux-invite-where">{invite.location ?? <em>Location revealed closer to the night</em>}</p>
+    {invite.dressCode && <p className="lux-invite-dress"><span>Dress code</span> {invite.dressCode}</p>}
+  </div>;
+}
 const message = (e: unknown, fallback: string) => e instanceof FirebaseError && e.code === "functions/permission-denied" ? errorText(e) : fallback;
 
 /**
@@ -80,13 +88,13 @@ export default function InviteLanding() {
       </> : invite.expired ? <>
         <p className="lux-invite-hi">{invite.firstName ? `${invite.firstName}, your invitation to` : "Your invitation to"}</p>
         <h1 className="lux-invite-name">{invite.partyName}</h1>
-        <p className="lux-invite-when">{formatWhen(new Date(invite.startsAt))}</p>
+        <Facts invite={invite} />
         <Countdown deadline={new Date(invite.rsvpDeadline)} status="expired" />
         <Link className="lux-link" to="/signin">Sign in with your email</Link>
       </> : <>
         <p className="lux-invite-hi">{invite.firstName ? `${invite.firstName}, you're invited to` : "You're invited to"}</p>
         <h1 className="lux-invite-name">{invite.partyName}</h1>
-        <p className="lux-invite-when">{formatWhen(new Date(invite.startsAt))}</p>
+        <Facts invite={invite} />
         <Countdown deadline={new Date(invite.rsvpDeadline)} status={invite.status} />
         <p className="lux-note" role="status">To open it, enter the 6-digit code we just emailed to<br /><span className="lux-email">{invite.email}</span></p>
         <form className="lux-form" onSubmit={(e: FormEvent) => { e.preventDefault(); void verify(code); }}>

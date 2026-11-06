@@ -11,9 +11,10 @@ import { cleanCode, normalizeEmail } from "./codes.js";
 import { sendLoginCode, tokenFor, useLoginCode } from "./login.js";
 import { EMAIL_FROM, REPLY_TO, SITE, inviteEmailHtml, inviteEmailSubject, inviteEmailText } from "./email.js";
 import { sendEmail } from "./mailer.js";
+import { fullName } from "./users.js";
 import {
-  cleanAllowance, cleanGuestInput, cleanPartyInput, cleanRequestInput, deadlineFor, formatPartyDate, formatReplyBy, inviteLink, isExpired,
-  isInviteToken, isPartyId, maskEmail, newGuestDeadline, newInviteToken, partyEndMs, reinviteDeadline, tokenHash
+  cleanAllowance, cleanGuestInput, cleanPartyInput, cleanRequestInput, deadlineFor, formatReplyBy, inviteLink, isExpired,
+  isInviteToken, isPartyId, maskEmail, newGuestDeadline, newInviteToken, partyEndMs, partyWhen, reinviteDeadline, tokenHash
 } from "./parties.js";
 
 const BAD_LINK = "This invite link isn't valid anymore. Ask your host for a new one.";
@@ -54,7 +55,7 @@ async function issueLink(partyId, uid) {
 /** Emails the invitation. Returns true when Resend took it; a failure is logged and reported to the host, never thrown. */
 async function emailInvite(party, guest, link, deadline) {
   const invite = {
-    guestName: guest.name, partyName: party.data.name, when: formatPartyDate(party.startsAt), dressCode: party.data.dressCode ?? "",
+    firstName: guest.firstName, partyName: party.data.name, when: partyWhen(party.startsAt), dressCode: party.data.dressCode ?? "",
     location: party.data.locationRevealed ? party.data.location : null, link, invitedBy: guest.invitedByName ?? null, note: guest.note ?? "",
     sendCount: guest.sendCount, replyBy: formatReplyBy(deadline)
   };
@@ -72,12 +73,12 @@ async function emailInvite(party, guest, link, deadline) {
 }
 
 /** Puts someone on a party's list (creating their member account if needed), then emails their personal link (Invitation 1). */
-async function addGuest(party, { email, name, gender, guestOf, canInvite, inviteLimit, invitedBy = null, invitedByName = null, note = "" }, by) {
+async function addGuest(party, { email, firstName, lastName, gender, guestOf, canInvite, inviteLimit, invitedBy = null, invitedByName = null, note = "" }, by) {
   await requireRoom(party);
-  const member = await findOrCreateMember(email, name, gender, by);
+  const member = await findOrCreateMember(email, { firstName, lastName, gender }, by);
   const own = newGuestDeadline(party.rsvpDeadline, Date.now(), party.startsAt);
   const guest = {
-    uid: member.uid, name, email, gender, guestOf, status: "invited", canInvite, inviteLimit, invitesUsed: 0, sendCount: 1,
+    uid: member.uid, firstName, lastName, email, gender, guestOf, status: "invited", canInvite, inviteLimit, invitesUsed: 0, sendCount: 1,
     rsvpDeadline: own === null ? null : Timestamp.fromMillis(own), invitedBy, invitedByName, note, addedBy: by,
     invitedAt: FieldValue.serverTimestamp(), respondedAt: null
   };
@@ -102,11 +103,11 @@ async function sendAgain(party, uid, deadline = null) {
     if (!snap.exists) throw new HttpsError("not-found", "That guest isn't on the list anymore.");
     const d = snap.data(), sendCount = d.sendCount + 1;
     if (deadline !== null) {
-      if (d.status !== "invited" && d.status !== "expired") throw new HttpsError("failed-precondition", `${d.name} already replied.`);
+      if (d.status !== "invited" && d.status !== "expired") throw new HttpsError("failed-precondition", `${d.firstName} already replied.`);
       tx.update(ref, { status: "invited", rsvpDeadline: Timestamp.fromMillis(deadline), respondedAt: null, sendCount });
       return { ...d, uid, sendCount, deadline };
     }
-    if (isExpired(d.status, guestDeadline(party, d), Date.now())) throw new HttpsError("failed-precondition", `${d.name}'s invitation expired. Re-invite them instead.`);
+    if (isExpired(d.status, guestDeadline(party, d), Date.now())) throw new HttpsError("failed-precondition", `${d.firstName}'s invitation expired. Re-invite them instead.`);
     tx.update(ref, { sendCount });
     return { ...d, uid, sendCount, deadline: guestDeadline(party, d) };
   });
@@ -210,7 +211,7 @@ export const remindAll = onCall({ ...base, secrets: [resendApiKey], timeoutSecon
   const failed = [];
   for (const g of waiting) {
     const { emailed } = await sendAgain(party, g.id);
-    if (!emailed) failed.push(g.get("name"));
+    if (!emailed) failed.push(fullName(g.data()));
   }
   return { sent: waiting.length - failed.length, failed };
 });
@@ -253,7 +254,8 @@ async function resolveInvite(data) {
 export const openInvite = onCall({ ...base, secrets: [resendApiKey], timeoutSeconds: 30 }, async (request) => {
   const { party, guest, user, uid, email, deadline, expired } = await resolveInvite(request.data);
   const teaser = {
-    partyName: party.data.name, startsAt: party.startsAt, firstName: guest.get("name").split(" ")[0], email: maskEmail(email),
+    partyName: party.data.name, firstName: guest.get("firstName"), email: maskEmail(email), when: partyWhen(party.startsAt),
+    location: party.data.locationRevealed ? party.data.location : null, dressCode: party.data.dressCode ?? "",
     rsvpDeadline: deadline, status: expired ? "expired" : guest.get("status"), expired
   };
   if (expired) return { ...teaser, signedIn: false, sent: false };
@@ -263,11 +265,11 @@ export const openInvite = onCall({ ...base, secrets: [resendApiKey], timeoutSeco
 
 /** The code from that email, typed on the invite page: signs that one guest in (custom token). */
 export const enterInvite = onCall({ ...base, timeoutSeconds: 20, serviceAccount: TOKEN_SIGNER }, async (request) => {
-  const { user, uid, email, expired } = await resolveInvite(request.data);
+  const { user, email, expired } = await resolveInvite(request.data);
   if (expired) throw new HttpsError("permission-denied", EXPIRED);
   const code = cleanCode(request.data?.code);
   if (!code || !(await useLoginCode(email, code))) throw new HttpsError("permission-denied", "That code isn't right or has expired. Send a new one.");
-  return { token: await tokenFor(uid, email, user.get("name")) };
+  return { token: await tokenFor(user, email) };
 });
 
 async function requireGuest(request) {
@@ -302,7 +304,7 @@ export const requestInvite = onCall({ ...base, timeoutSeconds: 20 }, async (requ
   const requests = party.ref.collection("requests");
   return db.runTransaction(async (tx) => {
     const me = await tx.get(guest.ref);
-    const { canInvite, inviteLimit, invitesUsed, name } = me.data();
+    const { canInvite, inviteLimit, invitesUsed, ...mine } = me.data();
     if (!canInvite) throw new HttpsError("permission-denied", "Your invitation doesn't include inviting others.");
     if (invitesUsed >= inviteLimit) throw new HttpsError("resource-exhausted", `You've used all ${inviteLimit} of your invites.`);
     const [onList, pending] = await Promise.all([
@@ -311,7 +313,7 @@ export const requestInvite = onCall({ ...base, timeoutSeconds: 20 }, async (requ
     ]);
     if (!onList.empty || !pending.empty) throw new HttpsError("already-exists", "That person is already invited or waiting for approval.");
     const ref = requests.doc();
-    tx.create(ref, { by: uid, byName: name, name: wanted.name, email, gender: wanted.gender, note: wanted.note, status: "pending", createdAt: FieldValue.serverTimestamp(), decidedAt: null, decidedBy: null, guestUid: null });
+    tx.create(ref, { by: uid, byName: fullName(mine), firstName: wanted.firstName, lastName: wanted.lastName, email, gender: wanted.gender, note: wanted.note, status: "pending", createdAt: FieldValue.serverTimestamp(), decidedAt: null, decidedBy: null, guestUid: null });
     tx.update(guest.ref, { invitesUsed: FieldValue.increment(1) });
     return { id: ref.id };
   });
@@ -338,7 +340,7 @@ export const decideRequest = onCall({ ...base, secrets: [resendApiKey], timeoutS
   try {
     requireNotOver(party);
     const result = await addGuest(party, {
-      email: req.email, name: req.name, gender: req.gender, guestOf: req.byName, canInvite: false, inviteLimit: 0, invitedBy: req.by, invitedByName: req.byName, note: req.note
+      email: req.email, firstName: req.firstName, lastName: req.lastName, gender: req.gender, guestOf: req.byName, canInvite: false, inviteLimit: 0, invitedBy: req.by, invitedByName: req.byName, note: req.note
     }, by);
     await ref.update({ status: "approved", guestUid: result.uid });
     return { status: "approved", ...result };

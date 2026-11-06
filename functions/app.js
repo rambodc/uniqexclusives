@@ -54,18 +54,24 @@ export async function ensureAuthUser(uid, email, name) {
 }
 
 /**
- * The users record for an email, created as a member when missing (with its Auth account). Returns { uid, name, created }.
- * `by` is the uid recorded as createdBy. An existing person keeps their account; their gender is set to the one given.
+ * The users record for an email, created as a member when missing (with its Auth account). `person` = { firstName, lastName, gender }.
+ * Returns { uid, created }. `by` is the uid recorded as createdBy. An existing person keeps their account and their name; their gender
+ * is set to the one given.
  */
-export async function findOrCreateMember(email, name, gender, by) {
+export async function findOrCreateMember(email, { firstName, lastName, gender }, by) {
   const existing = await findUserByEmail(email);
   if (existing) {
     if (existing.get("gender") !== gender) await existing.ref.update({ gender, updatedAt: FieldValue.serverTimestamp() });
-    return { uid: existing.id, name: existing.get("name"), created: false };
+    return { uid: existing.id, created: false };
   }
-  let uid;
-  try { uid = (await auth.getUserByEmail(email)).uid; }
-  catch (error) { if (error?.code !== "auth/user-not-found") throw error; uid = (await auth.createUser({ email, emailVerified: true, displayName: name })).uid; }
-  await db.collection("users").doc(uid).set({ email, name, gender, role: "member", staffPartyId: null, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
-  return { uid, name, created: true };
+  const uid = await authUidFor(email, `${firstName} ${lastName}`);
+  await db.collection("users").doc(uid).set({ email, firstName, lastName, gender, role: "member", staffPartyId: null, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
+  return { uid, created: true };
+}
+
+/** The Auth uid for an email, creating the (verified) account when there is none. */
+export async function authUidFor(email, displayName) {
+  try { return (await auth.getUserByEmail(email)).uid; }
+  catch (error) { if (error?.code !== "auth/user-not-found") throw error; }
+  return (await auth.createUser({ email, emailVerified: true, displayName })).uid;
 }

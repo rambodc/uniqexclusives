@@ -50,7 +50,7 @@ function frame({ title, preheader, inner }) {
 :root{color-scheme:dark;supported-color-schemes:dark}
 body{margin:0;padding:0;background:#010604}
 a{color:#8fd8b2}
-@media (max-width:520px){.card{padding:36px 18px 30px!important}.uex{font-size:58px!important;letter-spacing:12px!important}.code{font-size:40px!important;letter-spacing:.28em!important}.party{font-size:34px!important}.btn a{padding:18px 30px!important;font-size:15px!important}}
+@media (max-width:520px){.card{padding:36px 18px 30px!important}.uex{font-size:58px!important;letter-spacing:12px!important}.code{font-size:40px!important;letter-spacing:.28em!important}.party{font-size:34px!important}.when{font-size:24px!important}.btn a{padding:18px 30px!important;font-size:15px!important}}
 </style>
 </head>
 <body style="margin:0;padding:0;background:#010604;">
@@ -97,30 +97,30 @@ export function codeEmailHtml(code, name) {
 }
 
 /**
- * The personal party invitation. `invite` = { guestName, partyName, when, dressCode, location (null unless revealed), link,
- * invitedBy (the guest who asked for this invite, or null), note (their message, or ""), sendCount (1 for the first email,
- * then 2, 3… for each resend or re-invite), replyBy ({ date: "Fri, Nov 27", time: "8:00 PM" }) }.
- * The subject ends in "· Invitation N" so repeat invites don't bundle into one thread.
+ * The personal party invitation. `invite` = { firstName, partyName, when ({ date: "Saturday, December 5, 2026", time: "9:00 PM" }),
+ * dressCode, location (null unless revealed), link, invitedBy (the guest who asked for this invite, or null), note (their message, or ""),
+ * sendCount (1 for the first email, then 2, 3… for each resend or re-invite), replyBy ({ date: "Fri, Nov 27", time: "8:00 PM" }) }.
+ * The party's date and place are the headline; the reply-by is one small line by the button. The subject ends in "· Invitation N"
+ * so repeat invites don't bundle into one thread.
  */
 export function inviteEmailSubject({ partyName, sendCount }) { return `You're invited: ${partyName} · Invitation ${sendCount}`; }
+const replyLine = ({ replyBy }) => `Please reply by ${replyBy.date}, ${replyBy.time}. Unanswered invitations expire.`;
 
 export function inviteEmailText(invite) {
-  const first = invite.guestName.split(" ")[0];
   return [
-    `${first}, you're invited.`,
+    `${invite.firstName}, you're invited.`,
     "",
     invite.invitedBy ? `${invite.invitedBy} asked us to invite you.` : null,
     invite.note ? `"${invite.note}" — ${invite.invitedBy}` : null,
     invite.invitedBy ? "" : null,
     invite.partyName.toUpperCase(),
-    invite.when,
+    `${invite.when.date} · ${invite.when.time}`,
+    invite.location ?? "Location revealed closer to the night",
     invite.dressCode ? `Dress code: ${invite.dressCode}` : null,
-    invite.location ? `Location: ${invite.location}` : "Location: revealed closer to the night",
-    "",
-    `Reply by ${invite.replyBy.date} (${invite.replyBy.time}). If you don't answer by then, your invitation expires and your spot goes to someone else.`,
     "",
     "Open my invite:",
     invite.link,
+    replyLine(invite),
     "",
     "Open it and we'll email you a 6-digit code to sign in. The link is just for you, so please don't forward it.",
     "",
@@ -132,36 +132,35 @@ export function inviteEmailText(invite) {
 }
 
 export function inviteEmailHtml(invite) {
-  const first = esc(invite.guestName.split(" ")[0]);
-  const detail = (label, value) => `<tr><td align="center" style="padding:10px 0 0;font-family:${SANS};font-size:14px;line-height:1.5;color:#cfeedd;"><span style="font-family:Cinzel,Georgia,serif;font-size:10px;letter-spacing:3px;color:#6fb894;text-transform:uppercase;">${label}</span><br>${value}</td></tr>`;
   const from = invite.invitedBy ? `
         <tr><td align="center" style="padding:16px 0 0;font-family:${SANS};font-size:14px;line-height:1.6;color:#a8cfba;"><strong style="color:#eafff3;">${esc(invite.invitedBy)}</strong> asked us to invite you.</td></tr>${invite.note ? `
         <tr><td align="center" style="padding:14px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:420px;"><tr><td style="padding:14px 18px;border-left:2px solid #2bd48a;background:#041a10;border-radius:0 12px 12px 0;font-family:${SERIF};font-style:italic;font-size:18px;line-height:1.45;color:#dff8ea;text-align:left;">“${esc(invite.note).replace(/\n/g, "<br>")}”<br><span style="font-family:${SANS};font-style:normal;font-size:12px;color:#6fb894;">— ${esc(invite.invitedBy)}</span></td></tr></table></td></tr>` : ""}` : "";
+  const where = invite.location
+    ? `<span style="color:#e6fff1;">${esc(invite.location).replace(/\n/g, "<br>")}</span>`
+    : '<em style="color:#8fb9a3;">Location revealed closer to the night</em>';
   return frame({
     title: inviteEmailSubject(invite),
-    preheader: `${invite.partyName} · ${invite.when}. Reply by ${invite.replyBy.date}. Your personal invitation is inside.`,
-    inner: `        <tr><td align="center" style="padding:26px 0 0;font-family:${SERIF};font-style:italic;font-size:22px;line-height:1.35;color:#dff8ea;">${first}, you're invited</td></tr>${from}
-        <tr><td class="party" align="center" style="padding:22px 0 0;font-family:${SERIF};font-size:40px;line-height:1.1;color:#f2fff8;text-shadow:0 0 26px rgba(60,255,160,.4);">${esc(invite.partyName)}</td></tr>
-        ${detail("When", esc(invite.when))}
-        ${invite.dressCode ? detail("Dress code", esc(invite.dressCode)) : ""}
-        ${detail("Where", invite.location ? esc(invite.location).replace(/\n/g, "<br>") : '<em style="color:#8fb9a3;">Revealed closer to the night</em>')}
-        <tr><td align="center" style="padding:28px 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:16px 26px;border:1px solid #2bd48a;border-radius:16px;background:#052016;box-shadow:0 0 28px rgba(40,240,150,.22);">
-          <span style="font-family:Cinzel,Georgia,serif;font-size:10px;letter-spacing:4px;color:#6fb894;text-transform:uppercase;">Reply by</span><br>
-          <span class="replyby" style="font-family:${SERIF};font-size:30px;line-height:1.25;color:#f2fff8;text-shadow:0 0 22px rgba(60,255,160,.5);">${esc(invite.replyBy.date)}</span><br>
-          <span style="font-family:${SANS};font-size:12px;line-height:1.6;color:#a8cfba;">by ${esc(invite.replyBy.time)} · after that, your spot goes to someone else</span>
-        </td></tr></table></td></tr>
-        <tr><td class="btn" align="center" style="padding:28px 0 0;">
+    preheader: `${invite.partyName} · ${invite.when.date} at ${invite.when.time}. Your personal invitation is inside.`,
+    inner: `        <tr><td align="center" style="padding:26px 0 0;font-family:${SERIF};font-style:italic;font-size:22px;line-height:1.35;color:#dff8ea;">${esc(invite.firstName)}, you're invited</td></tr>${from}
+        <tr><td class="party" align="center" style="padding:20px 0 0;font-family:${SERIF};font-size:40px;line-height:1.1;color:#f2fff8;text-shadow:0 0 26px rgba(60,255,160,.4);">${esc(invite.partyName)}</td></tr>
+        <tr><td class="when" align="center" style="padding:22px 0 0;font-family:${SERIF};font-size:28px;line-height:1.2;color:#f2fff8;">${esc(invite.when.date)}</td></tr>
+        <tr><td align="center" style="padding:6px 0 0;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:1.3;letter-spacing:4px;padding-left:4px;color:#9fe8c2;text-transform:uppercase;">${esc(invite.when.time)}</td></tr>
+        <tr><td align="center" style="padding:18px 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="60"><tr><td height="1" bgcolor="#1d6b45" style="height:1px;line-height:1px;font-size:0;background:#1d6b45;">&nbsp;</td></tr></table></td></tr>
+        <tr><td class="where" align="center" style="padding:16px 0 0;font-family:${SANS};font-size:18px;line-height:1.45;color:#e6fff1;">${where}</td></tr>
+        ${invite.dressCode ? `<tr><td align="center" style="padding:14px 0 0;font-family:${SANS};font-size:13px;line-height:1.5;color:#a8cfba;"><span style="font-family:Cinzel,Georgia,serif;font-size:10px;letter-spacing:3px;color:#6fb894;text-transform:uppercase;">Dress code</span>&nbsp;&nbsp;${esc(invite.dressCode)}</td></tr>` : ""}
+        <tr><td class="btn" align="center" style="padding:32px 0 0;">
           <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${invite.link}" style="height:60px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#3dffa8" fillcolor="#0b5434"><w:anchorlock/><center style="color:#f2fff8;font-family:Georgia,serif;font-size:17px;letter-spacing:3px;">OPEN MY INVITE</center></v:roundrect><![endif]-->
           <!--[if !mso]><!--><a href="${invite.link}" target="_blank" style="display:inline-block;padding:20px 44px;border:1px solid #3dffa8;border-radius:14px;background:#0b5434;background-image:linear-gradient(180deg,#167a4c,#06301d);color:#f2fff8;font-family:Cinzel,Georgia,'Times New Roman',serif;font-size:17px;line-height:1;letter-spacing:4px;text-transform:uppercase;text-decoration:none;box-shadow:0 0 30px rgba(40,240,150,.35);">Open my invite</a><!--<![endif]-->
         </td></tr>
-        <tr><td align="center" style="padding:24px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Open it and we'll email you a 6-digit code to sign in. Accept or decline inside. This link is just for you, so please don't forward it.</td></tr>
+        <tr><td class="replyby" align="center" style="padding:12px 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#ff9d8a;">${esc(replyLine(invite))}</td></tr>
+        <tr><td align="center" style="padding:20px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Open it and we'll email you a 6-digit code to sign in. Accept or decline inside. This link is just for you, so please don't forward it.</td></tr>
         <tr><td align="center" style="padding:10px 0 0;font-family:${SANS};font-size:11px;line-height:1.6;color:#6f9a84;word-break:break-all;">Button not working? <a href="${invite.link}" style="color:#6fb894;">${invite.link}</a></td></tr>`
   });
 }
 
 /**
  * The owners' heads-up 3 days before a party's RSVP deadline. `summary` = { partyName, when, replyBy ({ date, time }), link (the
- * party's admin view), counts ({ total, accepted, declined, waiting }), waiting ([{ name, guestOf, gender, sendCount }]) }.
+ * party's admin view), counts ({ total, accepted, declined, waiting }), waiting ([{ firstName, lastName, guestOf, gender, sendCount }]) }.
  */
 export function summaryEmailSubject({ partyName, counts }) { return `${partyName}: ${counts.waiting} still haven't replied`; }
 
@@ -171,7 +170,7 @@ export function summaryEmailText(summary) {
     `${summary.counts.accepted} accepted · ${summary.counts.declined} declined · ${summary.counts.waiting} haven't replied (of ${summary.counts.total}).`,
     "",
     "Still waiting on:",
-    ...summary.waiting.map((g) => `- ${g.name} (${g.gender === "female" ? "F" : "M"})${g.guestOf ? `, guest of ${g.guestOf}` : ""} · Invitation ${g.sendCount}`),
+    ...summary.waiting.map((g) => `- ${g.firstName} ${g.lastName} (${g.gender === "female" ? "F" : "M"})${g.guestOf ? `, guest of ${g.guestOf}` : ""} · Invitation ${g.sendCount}`),
     "",
     "Remind them all, or re-invite anyone, from the guest list:",
     summary.link,
@@ -183,7 +182,7 @@ export function summaryEmailText(summary) {
 export function summaryEmailHtml(summary) {
   const { counts } = summary;
   const stat = (label, value) => `<td align="center" width="33%" style="padding:12px 4px;border:1px solid #145c3a;border-radius:12px;background:#041a10;"><span style="font-family:${SERIF};font-size:30px;line-height:1;color:#f2fff8;">${value}</span><br><span style="font-family:Cinzel,Georgia,serif;font-size:9px;letter-spacing:3px;color:#6fb894;text-transform:uppercase;">${label}</span></td>`;
-  const rows = summary.waiting.map((g) => `<tr><td style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:14px;line-height:1.4;color:#eafff3;text-align:left;">${esc(g.name)}<br><span style="font-size:12px;color:#8fb9a3;">${g.guestOf ? `Guest of ${esc(g.guestOf)} · ` : ""}${g.gender === "female" ? "Female" : "Male"}</span></td><td align="right" style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:12px;color:#6fb894;white-space:nowrap;">Invitation ${g.sendCount}</td></tr>`).join("");
+  const rows = summary.waiting.map((g) => `<tr><td style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:14px;line-height:1.4;color:#eafff3;text-align:left;">${esc(g.firstName)} ${esc(g.lastName)}<br><span style="font-size:12px;color:#8fb9a3;">${g.guestOf ? `Guest of ${esc(g.guestOf)} · ` : ""}${g.gender === "female" ? "Female" : "Male"}</span></td><td align="right" style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:12px;color:#6fb894;white-space:nowrap;">Invitation ${g.sendCount}</td></tr>`).join("");
   return frame({
     title: summaryEmailSubject(summary),
     preheader: `${counts.waiting} guests haven't replied. RSVPs close ${summary.replyBy.date}.`,

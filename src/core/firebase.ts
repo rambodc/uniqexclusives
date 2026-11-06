@@ -27,7 +27,7 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === "true") {
 export const requestCode = httpsCallable<{ email: string }, { ok: true }>(functions, "requestCode");
 export const verifyCode = httpsCallable<{ email: string; code: string }, { token: string }>(functions, "verifyCode");
 export type Gender = "male" | "female";
-export const createUser = httpsCallable<{ email: string; name: string; gender: Gender; role: string; staffPartyId: string | null }, { uid: string }>(functions, "createUser");
+export const createUser = httpsCallable<{ email: string; firstName: string; lastName: string; gender: Gender; role: string; staffPartyId: string | null }, { uid: string }>(functions, "createUser");
 export const removeUser = httpsCallable<{ uid: string }, { ok: true }>(functions, "removeUser");
 export const setUserRole = httpsCallable<{ uid: string; role: string; staffPartyId: string | null }, { ok: true }>(functions, "setUserRole");
 export const setStaffParty = httpsCallable<{ uid: string; partyId: string | null }, { ok: true }>(functions, "setStaffParty");
@@ -37,7 +37,7 @@ export type PartyInput = {
   id: string; name: string; description: string; photoPath: string | null; startsAt: number; endsAt: number | null; rsvpDeadline: number; location: string;
   locationRevealed: boolean; dressCode: string; guestLimit: number | null; published: boolean; pageSlug: string | null;
 };
-export type GuestInput = { partyId: string; name: string; email: string; gender: Gender; guestOf: string; canInvite: boolean; inviteLimit: number };
+export type GuestInput = { partyId: string; firstName: string; lastName: string; email: string; gender: Gender; guestOf: string; canInvite: boolean; inviteLimit: number };
 type Sent = { link: string; emailed: boolean };
 type Resent = Sent & { sendCount: number };
 export const saveParty = httpsCallable<PartyInput, { id: string }>(functions, "saveParty");
@@ -51,13 +51,14 @@ export const inviteLinkFor = httpsCallable<{ partyId: string; uid: string }, { l
 export const removeGuest = httpsCallable<{ partyId: string; uid: string }, { ok: true }>(functions, "removeGuest");
 export const decideRequest = httpsCallable<{ partyId: string; requestId: string; approve: boolean }, { status: string } & Partial<Sent>>(functions, "decideRequest");
 export type InviteTeaser = {
-  partyName: string; startsAt: number; firstName: string; email: string; rsvpDeadline: number; status: "invited" | "accepted" | "declined" | "expired";
+  partyName: string; when: { date: string; time: string }; location: string | null; dressCode: string;
+  firstName: string; email: string; rsvpDeadline: number; status: "invited" | "accepted" | "declined" | "expired";
   expired: boolean; signedIn: boolean; sent: boolean;
 };
 export const openInvite = httpsCallable<{ partyId: string; token: string }, InviteTeaser>(functions, "openInvite");
 export const enterInvite = httpsCallable<{ partyId: string; token: string; code: string }, { token: string }>(functions, "enterInvite");
 export const rsvp = httpsCallable<{ partyId: string; status: "accepted" | "declined" }, { status: string }>(functions, "rsvp");
-export const requestInvite = httpsCallable<{ partyId: string; name: string; email: string; gender: Gender; note: string }, { id: string }>(functions, "requestInvite");
+export const requestInvite = httpsCallable<{ partyId: string; firstName: string; lastName: string; email: string; gender: Gender; note: string }, { id: string }>(functions, "requestInvite");
 
 /** A callable's message for people: the SDK's " [403]" suffix dropped, internal errors replaced. */
 export const errorText = (e: unknown, fallback = "Something went wrong. Please try again.") =>
