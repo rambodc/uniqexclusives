@@ -2,8 +2,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
-import { FirebaseError } from "firebase/app";
-import { db, requestInvite as requestInviteFn, rsvp as rsvpFn } from "../core/firebase";
+import { db, errorText as say, requestInvite as requestInviteFn, rsvp as rsvpFn } from "../core/firebase";
 import { storage } from "../core/storage";
 import { useAuth } from "../auth/AuthContext";
 import { PageLoader } from "../ui/Loader";
@@ -14,7 +13,6 @@ import Placeholder from "./kit/Placeholder";
 import "../ui/lux.css";
 import "./kit/kit.css";
 
-const say = (e: unknown) => e instanceof FirebaseError && e.message && !e.message.startsWith("internal") ? e.message : "Something went wrong. Please try again.";
 
 /** /p/:partyId — a party's own page. Guests see it once it's published with a custom page; owners and the party's staff can always preview. */
 export default function PartyRoute() {
