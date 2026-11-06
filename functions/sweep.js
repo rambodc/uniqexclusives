@@ -32,13 +32,13 @@ export async function runSweep({ now = Date.now(), send = realSend } = {}) {
   if (due.length) {
     const owners = (await db.collection("users").where("role", "==", "owner").get()).docs.map((o) => o.get("email"));
     for (const p of due) {
-      const guests = (await p.ref.collection("guests").orderBy("name").get()).docs.map((g) => g.data());
+      const guests = (await p.ref.collection("guests").orderBy("firstName").get()).docs.map((g) => g.data());
       const waiting = guests.filter((g) => g.status === "invited");
       const deadline = p.get("rsvpDeadline").toMillis();
       const summary = {
         partyName: p.get("name"), when: formatPartyDate(p.get("startsAt").toMillis()), replyBy: formatReplyBy(deadline), link: `${SITE}/app/parties/${p.id}`,
         counts: { total: guests.length, accepted: guests.filter((g) => g.status === "accepted").length, declined: guests.filter((g) => g.status === "declined").length, waiting: waiting.length },
-        waiting: waiting.map((g) => ({ name: g.name, guestOf: g.guestOf, gender: g.gender, sendCount: g.sendCount }))
+        waiting: waiting.map((g) => ({ firstName: g.firstName, lastName: g.lastName, guestOf: g.guestOf, gender: g.gender, sendCount: g.sendCount }))
       };
       if (waiting.length && owners.length) {
         await send({ from: EMAIL_FROM, to: owners, subject: summaryEmailSubject(summary), html: summaryEmailHtml(summary), text: summaryEmailText(summary) }, `summary/${p.id}/${deadline}`);

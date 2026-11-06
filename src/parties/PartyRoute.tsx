@@ -46,8 +46,8 @@ export default function PartyRoute() {
         startsAt: party.startsAt, endsAt: party.endsAt, rsvpDeadline: party.rsvpDeadline, location: party.locationRevealed ? party.location : null, locationRevealed: party.locationRevealed, dressCode: party.dressCode
       },
       guest: guest ? {
-        name: guest.name, status: shownStatus(guest.status, deadline), rsvpDeadline: deadline, canRespond: rsvpOpen(deadline),
-        invites: { allowed: guest.canInvite, limit, used: used, left: Math.max(0, limit - used), requests: requests.map((r) => ({ name: r.name, email: r.email, status: r.status })) }
+        firstName: guest.firstName, lastName: guest.lastName, status: shownStatus(guest.status, deadline), rsvpDeadline: deadline, canRespond: rsvpOpen(deadline),
+        invites: { allowed: guest.canInvite, limit, used: used, left: Math.max(0, limit - used), requests: requests.map((r) => ({ firstName: r.firstName, lastName: r.lastName, email: r.email, status: r.status })) }
       } : null,
       preview: host && !guest,
       rsvp: async (status) => { try { await rsvpFn({ partyId: party.id, status }); } catch (e) { throw new Error(say(e)); } },

@@ -24,7 +24,7 @@ The email is `functions/email.js` (tables and inline styles for Gmail, Apple Mai
 **Secret:** `RESEND_API_KEY` in Secret Manager (a sending-only key for the `uniquem.ca` domain). Set it with `firebase functions:secrets:set RESEND_API_KEY --project uniqexclusives`, then redeploy functions (run the *Production - Firebase Functions* workflow) so they pick up the new version. Never commit it or put it in a GitHub secret.
 
 ## Users and roles
-One record per person at `users/{Firebase Auth uid}`: `email`, `name`, `role` (`owner`, `staff` or `member`), `createdAt`, `createdBy`, `updatedAt`.
+One record per person at `users/{Firebase Auth uid}`: `email`, `firstName`, `lastName` (both required), `gender` (`male` or `female`), `role` (`owner`, `staff` or `member`), `createdAt`, `createdBy`, `updatedAt`.
 - There is no public sign-up. Owners add and remove people on `/app` (the `createUser` and `removeUser` functions, which also create or delete the Auth account).
 - People can read only their own record; owners can list everyone. Nobody writes `users` from the browser.
 - Owners manage the list on `/app/people`. Members and staff see their invitations on `/app`.
@@ -32,15 +32,15 @@ One record per person at `users/{Firebase Auth uid}`: `email`, `name`, `role` (`
 ## Parties and invites
 Owners run parties on `/app` (Parties tab; People is the user list). Members (and staff, for now) see their invitations on `/app`.
 - **A party** has a name, description, photo (Storage `parties/{partyId}/…`, owners upload), start and optional end, location, a *reveal location* switch (off by default), dress code, guest limit, *published*, and a custom page (`pageSlug`). Guests see a party only when it is published **and** its custom page exists (`src/parties/README.md` explains how to add one). Owners can preview any party at `/p/{partyId}`.
-- **Invites**: one account per person, no plus-ones. An owner invites by name, email, free-text *Group / Guest of*, and whether they can invite others (and how many). Inviting creates the member account if needed and the guest record (status `invited`), and emails a personal link (`/i/{partyId}/{token}`). Opening the link never signs anyone in by itself: the page shows the party name and date and the guest's masked email, emails them a fresh 6-digit sign-in code (`openInvite`, same code email and 5-per-hour limit as the sign-in page, with a resend button), and signs them in once they type it (`enterInvite`, custom token), then opens `/p/{partyId}`. Someone already signed in as that guest skips the code. The link can be reused until the party ends (the end time, or a day after the start). Only a SHA-256 of the token is stored. Owners can copy a fresh link, resend the email, change someone's invite allowance, or remove them (their links stop working).
+- **Invites**: one account per person, no plus-ones. An owner invites by first and last name, email, Male or Female, free-text *Group / Guest of*, and whether they can invite others (and how many). Inviting creates the member account if needed and the guest record (status `invited`), and emails a personal link (`/i/{partyId}/{token}`). The email (`functions/email.js`) leads with the party name, then its date and time and the location in large type, a small dress code, and one small line under the button: "Please reply by …. Unanswered invitations expire." Opening the link never signs anyone in by itself: the page shows the party name, its date and time and place ("Location revealed closer to the night" until revealed) as the headline, a small dress code, the "Time left to reply" countdown and the guest's masked email, emails them a fresh 6-digit sign-in code (`openInvite`, same code email and 5-per-hour limit as the sign-in page, with a resend button), and signs them in once they type it (`enterInvite`, custom token), then opens `/p/{partyId}`. Someone already signed in as that guest skips the code. The link can be reused until the party ends (the end time, or a day after the start). Only a SHA-256 of the token is stored. Owners can copy a fresh link, resend the email, change someone's invite allowance, or remove them (their links stop working).
 - **RSVP**: guests accept or decline, and can change it until the party starts.
-- **Guest invites**: a guest who's allowed can ask to invite up to N people (name, email, optional note). Requests wait for an owner's approval. *Guest of* is set to the guest who asked, and pending and approved requests both count against N. Approving sends the invite, with the note and who asked. Rejecting frees the slot.
+- **Guest invites**: a guest who's allowed can ask to invite up to N people (first and last name, email, Male or Female, optional note). Requests wait for an owner's approval. *Guest of* is set to the guest who asked, and pending and approved requests both count against N. Approving sends the invite, with the note and who asked. Rejecting frees the slot.
 
 Data (`functions/parties.js` has the full list):
 - `parties/{partyId}` is the party. `location` is filled in only once revealed.
 - `parties/{partyId}/private/details` holds `location`, owners only.
-- `parties/{partyId}/guests/{uid}` holds `name, email, guestOf, status, canInvite, inviteLimit, invitesUsed, invitedBy, invitedByName, note`.
-- `parties/{partyId}/requests/{id}` holds `by, byName, name, email, note, status` (`pending | approved | rejected`).
+- `parties/{partyId}/guests/{uid}` holds `firstName, lastName, email, gender, guestOf, status, canInvite, inviteLimit, invitesUsed, sendCount, rsvpDeadline, invitedBy, invitedByName, note`.
+- `parties/{partyId}/requests/{id}` holds `by, byName, firstName, lastName, email, gender, note, status` (`pending | approved | rejected`).
 - `parties/{partyId}/tokens/{sha256}` is touched by functions only.
 
 Every write goes through the functions in `functions/parties-api.js`. Guests can read only their own guest record and requests, plus the party once it's visible. Removing a user (People) also takes them off every party list.
@@ -48,7 +48,7 @@ Every write goes through the functions in `functions/parties-api.js`. Guests can
 Firestore keeps one top-level collection per mini app: `users`, `loginCodes` for sign-in (clients can never read it), and `parties`. Everything else is closed in `firestore.rules`. Storage is closed except party photos (`storage.rules`).
 
 ## Tests
-- `npm test` (frontend) and `npm test --prefix functions` (pure helpers and email templates) run in CI.
+- `npm test` (frontend) and `npm test --prefix functions` (pure helpers and email templates) run in CI. `src/ui/GenderPicker.test.tsx` clicks Male and Female in real Chrome (`playwright-core`, `channel: "chrome"`) with the real styles.
 - `npm run test:rules` runs the Firestore and Storage rules tests against the emulators.
 - `npm run test:e2e` runs sign-in and parties end to end on the emulators. In the emulator, emails are only logged.
 

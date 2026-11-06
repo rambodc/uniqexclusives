@@ -27,23 +27,23 @@ const allowed = async (p) => { try { await p; return true; } catch (e) { console
 
 before(async () => {
   await fetch(`http://127.0.0.1:8080/emulator/v1/projects/${P}/databases/(default)/documents`, { method: "DELETE" });
-  await seed("users/OWNER", { email: "o@x.co", name: "Owner", gender: "male", role: "owner", staffPartyId: null });
-  await seed("users/ANN", { email: "ann@x.co", name: "Ann", gender: "female", role: "member", staffPartyId: null });
-  await seed("users/BOB", { email: "bob@x.co", name: "Bob", gender: "male", role: "member", staffPartyId: null });
-  await seed("users/STAFF", { email: "s@x.co", name: "Staff", gender: "male", role: "staff", staffPartyId: null });
-  await seed("users/RUNNER", { email: "r@x.co", name: "Runner", gender: "female", role: "staff", staffPartyId: "live0000001" });
-  await seed("users/SNEAK", { email: "m@x.co", name: "Sneak", gender: "male", role: "member", staffPartyId: "live0000001" });
+  await seed("users/OWNER", { email: "o@x.co", firstName: "Owner", lastName: "One", gender: "male", role: "owner", staffPartyId: null });
+  await seed("users/ANN", { email: "ann@x.co", firstName: "Ann", lastName: "A", gender: "female", role: "member", staffPartyId: null });
+  await seed("users/BOB", { email: "bob@x.co", firstName: "Bob", lastName: "B", gender: "male", role: "member", staffPartyId: null });
+  await seed("users/STAFF", { email: "s@x.co", firstName: "Staff", lastName: "S", gender: "male", role: "staff", staffPartyId: null });
+  await seed("users/RUNNER", { email: "r@x.co", firstName: "Runner", lastName: "R", gender: "female", role: "staff", staffPartyId: "live0000001" });
+  await seed("users/SNEAK", { email: "m@x.co", firstName: "Sneak", lastName: "S", gender: "male", role: "member", staffPartyId: "live0000001" });
   // live: published + custom page. draft: published, no page. hidden: has a page, not published.
   await seed("parties/live0000001", { name: "Live", published: true, pageSlug: "uex-2", location: null, locationRevealed: false });
   await seed("parties/draft000001", { name: "Draft", published: true, pageSlug: null });
   await seed("parties/hidden00001", { name: "Hidden", published: false, pageSlug: "uex-2" });
   for (const p of ["live0000001", "draft000001", "hidden00001"]) {
-    await seed(`parties/${p}/guests/ANN`, { uid: "ANN", name: "Ann", email: "ann@x.co", status: "invited" });
+    await seed(`parties/${p}/guests/ANN`, { uid: "ANN", firstName: "Ann", lastName: "A", email: "ann@x.co", status: "invited" });
     await seed(`parties/${p}/private/details`, { location: "Secret place" });
   }
-  await seed("parties/live0000001/guests/BOB", { uid: "BOB", name: "Bob", email: "bob@x.co", status: "accepted" });
-  await seed("parties/live0000001/requests/req0000001", { by: "ANN", byName: "Ann", name: "Cy", email: "cy@x.co", status: "pending" });
-  await seed("parties/live0000001/requests/req0000002", { by: "BOB", byName: "Bob", name: "Di", email: "di@x.co", status: "pending" });
+  await seed("parties/live0000001/guests/BOB", { uid: "BOB", firstName: "Bob", lastName: "B", email: "bob@x.co", status: "accepted" });
+  await seed("parties/live0000001/requests/req0000001", { by: "ANN", byName: "Ann A", firstName: "Cy", lastName: "C", email: "cy@x.co", status: "pending" });
+  await seed("parties/live0000001/requests/req0000002", { by: "BOB", byName: "Bob B", firstName: "Di", lastName: "D", email: "di@x.co", status: "pending" });
   await seed("parties/live0000001/tokens/abc", { uid: "ANN" });
 });
 

@@ -10,7 +10,7 @@ import { hasPage } from "../parties/registry";
 type Row = { party: Party; guest: Guest };
 
 /** A member's invitations: every published party they're on that has its page ready, soonest first. */
-export default function MemberHome({ name }: { name: string }) {
+export default function MemberHome({ firstName }: { firstName: string }) {
   const { user } = useAuth();
   const uid = user?.uid ?? "";
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -31,16 +31,15 @@ export default function MemberHome({ name }: { name: string }) {
     }, () => { if (live) setRows([]); });
     return () => { live = false; stop(); };
   }, [uid]);
-  const first = name.split(" ")[0];
   if (!rows) return <div className="lux-loading"><GlobeLoader label="Finding your invitations…" /></div>;
   if (!rows.length) return <section className="lux-panel lux-welcome">
     <p className="lux-kicker">Uniq Exclusives</p>
-    <h1>You're in, {first}.</h1>
+    <h1>You're in, {firstName}.</h1>
     <p>Your invitation details will appear here soon.</p>
   </section>;
   return <section className="lux-panel">
     <p className="lux-kicker">Your invitations</p>
-    <h1>Welcome, {first}.</h1>
+    <h1>Welcome, {firstName}.</h1>
     <ul className="party-cards">
       {rows.map(({ party, guest }) => { const status = shownStatus(guest.status, guestDeadline(party, guest)); return <li key={party.id}>
         <Link to={`/p/${party.id}`} className="party-card">

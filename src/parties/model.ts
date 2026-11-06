@@ -7,14 +7,14 @@ export type Party = {
   location: string | null; locationRevealed: boolean; dressCode: string; guestLimit: number | null; published: boolean; pageSlug: string | null;
 };
 export type Guest = {
-  uid: string; name: string; email: string; gender: Gender; guestOf: string; status: GuestStatus; canInvite: boolean; inviteLimit: number; invitesUsed: number;
+  uid: string; firstName: string; lastName: string; email: string; gender: Gender; guestOf: string; status: GuestStatus; canInvite: boolean; inviteLimit: number; invitesUsed: number;
   /** How many invite emails went out (the subject says "Invitation N"). */
   sendCount: number;
   /** Their own deadline from a re-invite; null means the party's. */
   rsvpDeadline: Date | null;
   invitedByName: string | null; note: string;
 };
-export type InviteRequest = { id: string; by: string; byName: string; name: string; email: string; gender: Gender; note: string; status: "pending" | "approving" | "approved" | "rejected"; createdAt: Date | null };
+export type InviteRequest = { id: string; by: string; byName: string; firstName: string; lastName: string; email: string; gender: Gender; note: string; status: "pending" | "approving" | "approved" | "rejected"; createdAt: Date | null };
 
 type Data = Record<string, unknown>;
 type Ts = { toDate: () => Date };
@@ -38,17 +38,17 @@ const STATUSES: GuestStatus[] = ["invited", "accepted", "declined", "expired"];
 export function parseGuest(uid: string, data: unknown): Guest | null {
   if (!data || typeof data !== "object") return null;
   const d = data as Data;
-  if (typeof d.name !== "string" || !STATUSES.includes(d.status as GuestStatus) || !isGender(d.gender)) return null;
+  if (typeof d.firstName !== "string" || typeof d.lastName !== "string" || !STATUSES.includes(d.status as GuestStatus) || !isGender(d.gender)) return null;
   return {
-    uid, name: d.name, email: str(d.email), gender: d.gender, guestOf: str(d.guestOf), status: d.status as GuestStatus, canInvite: d.canInvite === true,
+    uid, firstName: d.firstName, lastName: d.lastName, email: str(d.email), gender: d.gender, guestOf: str(d.guestOf), status: d.status as GuestStatus, canInvite: d.canInvite === true,
     inviteLimit: num(d.inviteLimit), invitesUsed: num(d.invitesUsed), sendCount: num(d.sendCount), rsvpDeadline: isTs(d.rsvpDeadline) ? d.rsvpDeadline.toDate() : null, invitedByName: typeof d.invitedByName === "string" ? d.invitedByName : null, note: str(d.note)
   };
 }
 export function parseRequest(id: string, data: unknown): InviteRequest | null {
   if (!data || typeof data !== "object") return null;
   const d = data as Data;
-  if (typeof d.name !== "string" || typeof d.email !== "string" || !isGender(d.gender) || !["pending", "approving", "approved", "rejected"].includes(d.status as string)) return null;
-  return { id, by: str(d.by), byName: str(d.byName), name: d.name, email: d.email, gender: d.gender, note: str(d.note), status: d.status as InviteRequest["status"], createdAt: isTs(d.createdAt) ? d.createdAt.toDate() : null };
+  if (typeof d.firstName !== "string" || typeof d.lastName !== "string" || typeof d.email !== "string" || !isGender(d.gender) || !["pending", "approving", "approved", "rejected"].includes(d.status as string)) return null;
+  return { id, by: str(d.by), byName: str(d.byName), firstName: d.firstName, lastName: d.lastName, email: d.email, gender: d.gender, note: str(d.note), status: d.status as InviteRequest["status"], createdAt: isTs(d.createdAt) ? d.createdAt.toDate() : null };
 }
 
 /** When invite links close: the end time, or a day after the start. */

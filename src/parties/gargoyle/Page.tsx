@@ -30,7 +30,7 @@ function useReveal() {
 export default function Page(props: PartyPageProps) {
   const { party, guest } = props;
   const root = useReveal();
-  const first = guest?.name.trim().split(/\s+/)[0] ?? "";
+  const first = guest?.firstName ?? "";
   const ends = party.endsAt ? ` – ${TIME.format(party.endsAt)}` : "";
   return <div className="gg" ref={root}>
     <header className="gg-hero">
@@ -55,12 +55,12 @@ export default function Page(props: PartyPageProps) {
     <main className="gg-main">
       <section id="gg-details" className="gg-tablet gg-reveal" aria-label="Details">
         <dl className="gg-facts">
-          <div><dt>When</dt><dd>{DATE.format(party.startsAt)}<br />{TIME.format(party.startsAt)}{ends}</dd></div>
-          <div><dt>Dress code</dt><dd>{party.dressCode || <em>To be announced</em>}</dd></div>
+          <div><dt>When</dt><dd>{DATE.format(party.startsAt)}<span className="gg-time">{TIME.format(party.startsAt)}{ends}</span></dd></div>
           <div><dt>Where</dt><dd>{party.location
             ? <>{party.location}<br /><a className="gg-map" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(party.location)}`} target="_blank" rel="noreferrer">Open in Maps</a></>
             : <em>Revealed closer to the night</em>}</dd></div>
         </dl>
+        <p className="gg-dress"><span>Dress code</span> {party.dressCode || <em>To be announced</em>}</p>
       </section>
 
       <section className="gg-panel gg-rsvp gg-reveal">

@@ -33,13 +33,14 @@ describe("party model", () => {
     expect(timeLeft(deadline, at + 1)).toMatchObject({ ms: 0, urgent: false, over: true });
   });
   it("counts guests by status, gender and pending requests", () => {
-    const g = (uid: string, status: string, gender = "male") => parseGuest(uid, { name: uid, status, gender })!;
-    const r = (id: string, status: string) => parseRequest(id, { name: id, email: `${id}@x.co`, gender: "female", status })!;
+    const g = (uid: string, status: string, gender = "male") => parseGuest(uid, { firstName: uid, lastName: "L", status, gender })!;
+    const r = (id: string, status: string) => parseRequest(id, { firstName: id, lastName: "L", email: `${id}@x.co`, gender: "female", status })!;
     const now = deadline.getTime() + 1;
     expect(guestCounts([g("a", "accepted"), g("b", "invited", "female"), g("c", "declined"), g("d", "accepted", "female"), g("e", "expired")], [r("p", "pending"), r("q", "rejected")], { rsvpDeadline: deadline }, now))
       .toEqual({ total: 5, invited: 0, accepted: 2, declined: 1, expired: 2, male: 3, female: 2, pending: 1 });
-    expect(parseGuest("z", { name: "Z", status: "maybe", gender: "male" })).toBeNull();
-    expect(parseGuest("z", { name: "Z", status: "invited" })).toBeNull();
+    expect(parseGuest("z", { firstName: "Z", lastName: "L", status: "maybe", gender: "male" })).toBeNull();
+    expect(parseGuest("z", { name: "Z L", status: "invited", gender: "male" })).toBeNull();
+    expect(parseGuest("z", { firstName: "Z", lastName: "L", status: "invited" })).toBeNull();
   });
   it("round-trips datetime-local values", () => {
     expect(toLocalInput(start)).toBe("2026-12-12T20:00");

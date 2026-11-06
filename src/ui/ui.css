@@ -34,8 +34,10 @@
 .uex-gender{margin:0;padding:0;border:0;display:grid;gap:6px;text-align:left;min-width:0}
 .uex-gender legend{padding:0 0 6px;font-size:13px;color:#a8cfba}
 .uex-gender div{display:flex;gap:6px;padding:4px;border:1px solid rgba(80,255,170,.25);border-radius:12px;background:rgba(1,10,6,.75);min-height:50px}
-.uex-gender label{flex:1;display:grid!important;place-items:center;border-radius:9px;color:#a8cfba!important;font-size:15px!important;cursor:pointer;transition:background .2s,color .2s}
+.uex-gender label{position:relative;flex:1;display:grid!important;place-items:center;border-radius:9px;color:#a8cfba!important;font-size:15px!important;cursor:pointer;transition:background .2s,color .2s}
 .uex-gender label.is-on{background:rgba(31,211,138,.22);color:#f2fff8!important;box-shadow:inset 0 0 0 1px rgba(80,255,170,.5),0 0 16px rgba(40,240,150,.18)}
-.uex-gender input{position:absolute;opacity:0;width:1px;height:1px}
+/* Each radio fills its own pill and nothing else. .lux-form input (width:100%, min-height:50px) must not reach it: unscoped, the hidden
+   radios grew page-wide and the Female one lay over Male, so clicking Male picked Female. */
+.uex-gender input{position:absolute;inset:0;width:100%!important;height:100%!important;min-height:0!important;margin:0;padding:0!important;border:0!important;opacity:0;cursor:pointer}
 .uex-gender label:has(input:focus-visible){outline:2px solid #4dffb0;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.uex-loader-orb img,.uex-loader-ring,.uex-loader-label,.uex-overlay,.uex-modal,.uex-modal-back{animation:none}}

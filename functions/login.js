@@ -6,6 +6,7 @@ import { CODE_TTL_MS, checkCode, codeDocId, hashCode, newCode, newSalt, sendWind
 import { EMAIL_FROM, REPLY_TO, codeEmailHtml, codeEmailSubject, codeEmailText } from "./email.js";
 import { sendEmail } from "./mailer.js";
 import { auth, db, ensureAuthUser, resendApiKey } from "./app.js";
+import { fullName } from "./users.js";
 
 /**
  * Emails a fresh code to a users record (`user` is its snapshot). Max five per address per rolling hour.
@@ -25,7 +26,7 @@ export async function sendLoginCode(user, email) {
     return false;
   }
   try {
-    const name = typeof user.get("name") === "string" ? user.get("name").split(" ")[0] : "";
+    const name = user.get("firstName");
     const id = await sendEmail(resendApiKey.value(), {
       from: EMAIL_FROM, to: [email], reply_to: REPLY_TO, subject: codeEmailSubject(code),
       html: codeEmailHtml(code, name), text: codeEmailText(code, name)
@@ -50,8 +51,8 @@ export async function useLoginCode(email, code) {
   return outcome === "ok";
 }
 
-/** A custom token for a users record, making sure its Auth account exists. The calling function must run as TOKEN_SIGNER. */
-export async function tokenFor(uid, email, name) {
-  await ensureAuthUser(uid, email, typeof name === "string" ? name : undefined);
-  return auth.createCustomToken(uid);
+/** A custom token for a users record (its snapshot), making sure its Auth account exists. The calling function must run as TOKEN_SIGNER. */
+export async function tokenFor(user, email) {
+  await ensureAuthUser(user.id, email, fullName(user.data()));
+  return auth.createCustomToken(user.id);
 }
