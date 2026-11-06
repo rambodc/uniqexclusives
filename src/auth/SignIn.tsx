@@ -5,6 +5,7 @@ import { FirebaseError } from "firebase/app";
 import { auth, requestCode, verifyCode } from "../core/firebase";
 import { useAuth } from "./AuthContext";
 import { codeDigits, formatCodeInput, isEmail } from "./roles";
+import { Busy, CardOverlay } from "../ui/Loader";
 import "../ui/lux.css";
 
 const SENT = "Your code is on its way.";
@@ -16,11 +17,12 @@ export default function SignIn() {
   const { user, loading } = useAuth();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState(""), [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [wait, setWait] = useState(0);
+  const [busy, setBusy] = useState(false), [opening, setOpening] = useState(false), [error, setError] = useState(""), [wait, setWait] = useState(0);
   const codeInput = useRef<HTMLInputElement>(null);
   useEffect(() => { if (wait <= 0) return; const id = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(id); }, [wait]);
   useEffect(() => { if (step === "code") codeInput.current?.focus(); }, [step]);
   if (!loading && user && !busy) return <Navigate to="/app" replace />;
+  // After the 6th digit: "Opening the door…" covers the card until the signed-in area loads (it has the same globe loader).
 
   async function send(event?: FormEvent) {
     event?.preventDefault(); setError("");
@@ -36,20 +38,22 @@ export default function SignIn() {
   }
   async function verify(value: string) {
     if (value.length !== 6 || busy) return;
-    setBusy(true); setError("");
+    setBusy(true); setOpening(true); setError("");
     try {
       const { data } = await verifyCode({ email: email.trim().toLowerCase(), code: value });
       await signInWithCustomToken(auth, data.token);
     } catch (e) {
+      setOpening(false);
       setError(e instanceof FirebaseError && (e.code === "functions/permission-denied" || e.code === "functions/invalid-argument")
         ? "That code isn't right or has expired. Request a new one." : "Something went wrong. Please try again.");
-      setCode(""); codeInput.current?.focus();
+      setCode(""); setTimeout(() => codeInput.current?.focus());
     } finally { setBusy(false); }
   }
   return <main className="lux-page lux-center lux-signin">
     <div className="lux-aura" aria-hidden="true" />
     <Link to="/" className="lux-back">← UEX</Link>
     <section className="lux-card">
+      {opening && <CardOverlay label="Opening the door…" />}
       <img className="lux-globe" src="/brand/uex-globe.webp" alt="" width={900} height={647} />
       <p className="lux-kicker">Uniq Exclusives</p>
       {step === "email" ? <>
@@ -59,7 +63,7 @@ export default function SignIn() {
           <label htmlFor="email" className="sr-only">Email</label>
           <input id="email" type="email" inputMode="email" autoComplete="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus required />
           {error && <p className="lux-error" role="alert">{error}</p>}
-          <button className="lux-button" disabled={busy}>{busy ? "Checking the list…" : "Send my code"}</button>
+          <button className="lux-button" disabled={busy}>{busy ? <Busy>Sending your code…</Busy> : "Send my code"}</button>
         </form>
       </> : <>
         <h1>Check your email</h1>
@@ -69,10 +73,10 @@ export default function SignIn() {
           <input id="code" ref={codeInput} className="lux-code" inputMode="numeric" autoComplete="one-time-code" placeholder="000-000" maxLength={7}
             value={formatCodeInput(code)} onChange={(e) => { const v = codeDigits(e.target.value); setCode(v); if (v.length === 6) void verify(v); }} disabled={busy} />
           {error && <p className="lux-error" role="alert">{error}</p>}
-          <button className="lux-button" disabled={busy || code.length !== 6}>{busy ? "Opening the door…" : "Enter"}</button>
+          <button className="lux-button" disabled={busy || code.length !== 6}>{busy ? <Busy>Opening the door…</Busy> : "Enter"}</button>
         </form>
         <div className="lux-links">
-          <button className="lux-link" onClick={() => void send()} disabled={busy || wait > 0}>{wait > 0 ? `Send a new code in ${wait}s` : "Send a new code"}</button>
+          <button className="lux-link" onClick={() => void send()} disabled={busy || wait > 0}>{busy && !opening ? <Busy>Sending a new code…</Busy> : wait > 0 ? `Send a new code in ${wait}s` : "Send a new code"}</button>
           <button className="lux-link" onClick={() => { setStep("email"); setError(""); }}>Use a different email</button>
         </div>
       </>}

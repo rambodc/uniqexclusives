@@ -1,17 +1,17 @@
 rules_version = '2';
 // Party photos at parties/{partyId}/{file}. Owners upload (images under 10 MB) and delete.
-// A guest can see the photo of a published party they are on. Everything else is closed.
+// The party's staff, and a guest of a published party they are on, can see the photo. Everything else is closed.
 service firebase.storage {
   match /b/{bucket}/o {
-    function isOwner() {
-      return request.auth != null
-        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "owner";
-    }
+    function me() { return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data; }
+    function hasRecord() { return request.auth != null && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)); }
+    function isOwner() { return hasRecord() && me().role == "owner"; }
     match /parties/{partyId}/{file} {
-      allow read: if isOwner() || (request.auth != null
-        && firestore.exists(/databases/(default)/documents/parties/$(partyId)/guests/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/parties/$(partyId)).data.published == true);
+      allow read: if isOwner()
+        || (hasRecord() && me().role == "staff" && me().staffPartyId == partyId)
+        || (request.auth != null
+          && firestore.exists(/databases/(default)/documents/parties/$(partyId)/guests/$(request.auth.uid))
+          && firestore.get(/databases/(default)/documents/parties/$(partyId)).data.published == true);
       allow create, update: if isOwner()
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');

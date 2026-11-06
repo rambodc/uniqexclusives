@@ -8,7 +8,10 @@ import PartyForm from "./parties/PartyForm";
 import PartyList from "./parties/PartyList";
 import "../ui/lux.css";
 
-/** Signed-in area (/app/*). Owners run parties and people; everyone else (members, and staff for now) sees their invitations. */
+/**
+ * Signed-in area (/app/*). Owners run every party and People. Staff run the guest list of the one party they're assigned to
+ * (they land on it). Members see their invitations.
+ */
 export default function Inside() {
   const { user, record, logout } = useAuth();
   const owner = record?.role === "owner";
@@ -34,10 +37,19 @@ export default function Inside() {
         <Route index element={<PartyList />} />
         <Route path="people" element={<People />} />
         <Route path="parties/new" element={<PartyForm />} />
-        <Route path="parties/:partyId" element={<PartyAdmin />} />
+        <Route path="parties/:partyId" element={<PartyAdmin owner />} />
         <Route path="parties/:partyId/edit" element={<PartyForm />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
+      : record.role === "staff" ? record.staffPartyId ? <Routes>
+        <Route path={`parties/${record.staffPartyId}`} element={<PartyAdmin owner={false} partyId={record.staffPartyId} />} />
+        <Route path="*" element={<Navigate to={`/app/parties/${record.staffPartyId}`} replace />} />
+      </Routes>
+        : <section className="lux-panel lux-welcome">
+          <p className="lux-kicker">Staff</p>
+          <h1>No party assigned yet</h1>
+          <p>Once the owner assigns you to a party, its guest list opens here.</p>
+        </section>
       : <Routes>
         <Route index element={<MemberHome name={record.name} />} />
         <Route path="*" element={<Navigate to="/app" replace />} />

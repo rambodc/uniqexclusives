@@ -98,9 +98,11 @@ export function codeEmailHtml(code, name) {
 
 /**
  * The personal party invitation. `invite` = { guestName, partyName, when, dressCode, location (null unless revealed), link,
- * invitedBy (the guest who asked for this invite, or null), note (their message, or "") }.
+ * invitedBy (the guest who asked for this invite, or null), note (their message, or ""), sendCount (1 for the first email,
+ * then 2, 3… for each resend or re-invite), replyBy ({ date: "Fri, Nov 27", time: "8:00 PM" }) }.
+ * The subject ends in "· Invitation N" so repeat invites don't bundle into one thread.
  */
-export function inviteEmailSubject({ partyName }) { return `You're invited: ${partyName}`; }
+export function inviteEmailSubject({ partyName, sendCount }) { return `You're invited: ${partyName} · Invitation ${sendCount}`; }
 
 export function inviteEmailText(invite) {
   const first = invite.guestName.split(" ")[0];
@@ -114,6 +116,8 @@ export function inviteEmailText(invite) {
     invite.when,
     invite.dressCode ? `Dress code: ${invite.dressCode}` : null,
     invite.location ? `Location: ${invite.location}` : "Location: revealed closer to the night",
+    "",
+    `Reply by ${invite.replyBy.date} (${invite.replyBy.time}). If you don't answer by then, your invitation expires and your spot goes to someone else.`,
     "",
     "Open my invite:",
     invite.link,
@@ -135,17 +139,64 @@ export function inviteEmailHtml(invite) {
         <tr><td align="center" style="padding:14px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:420px;"><tr><td style="padding:14px 18px;border-left:2px solid #2bd48a;background:#041a10;border-radius:0 12px 12px 0;font-family:${SERIF};font-style:italic;font-size:18px;line-height:1.45;color:#dff8ea;text-align:left;">“${esc(invite.note).replace(/\n/g, "<br>")}”<br><span style="font-family:${SANS};font-style:normal;font-size:12px;color:#6fb894;">— ${esc(invite.invitedBy)}</span></td></tr></table></td></tr>` : ""}` : "";
   return frame({
     title: inviteEmailSubject(invite),
-    preheader: `${invite.partyName} · ${invite.when}. Your personal invitation is inside.`,
+    preheader: `${invite.partyName} · ${invite.when}. Reply by ${invite.replyBy.date}. Your personal invitation is inside.`,
     inner: `        <tr><td align="center" style="padding:26px 0 0;font-family:${SERIF};font-style:italic;font-size:22px;line-height:1.35;color:#dff8ea;">${first}, you're invited</td></tr>${from}
         <tr><td class="party" align="center" style="padding:22px 0 0;font-family:${SERIF};font-size:40px;line-height:1.1;color:#f2fff8;text-shadow:0 0 26px rgba(60,255,160,.4);">${esc(invite.partyName)}</td></tr>
         ${detail("When", esc(invite.when))}
         ${invite.dressCode ? detail("Dress code", esc(invite.dressCode)) : ""}
         ${detail("Where", invite.location ? esc(invite.location).replace(/\n/g, "<br>") : '<em style="color:#8fb9a3;">Revealed closer to the night</em>')}
-        <tr><td class="btn" align="center" style="padding:32px 0 0;">
+        <tr><td align="center" style="padding:28px 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:16px 26px;border:1px solid #2bd48a;border-radius:16px;background:#052016;box-shadow:0 0 28px rgba(40,240,150,.22);">
+          <span style="font-family:Cinzel,Georgia,serif;font-size:10px;letter-spacing:4px;color:#6fb894;text-transform:uppercase;">Reply by</span><br>
+          <span class="replyby" style="font-family:${SERIF};font-size:30px;line-height:1.25;color:#f2fff8;text-shadow:0 0 22px rgba(60,255,160,.5);">${esc(invite.replyBy.date)}</span><br>
+          <span style="font-family:${SANS};font-size:12px;line-height:1.6;color:#a8cfba;">by ${esc(invite.replyBy.time)} · after that, your spot goes to someone else</span>
+        </td></tr></table></td></tr>
+        <tr><td class="btn" align="center" style="padding:28px 0 0;">
           <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${invite.link}" style="height:60px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#3dffa8" fillcolor="#0b5434"><w:anchorlock/><center style="color:#f2fff8;font-family:Georgia,serif;font-size:17px;letter-spacing:3px;">OPEN MY INVITE</center></v:roundrect><![endif]-->
           <!--[if !mso]><!--><a href="${invite.link}" target="_blank" style="display:inline-block;padding:20px 44px;border:1px solid #3dffa8;border-radius:14px;background:#0b5434;background-image:linear-gradient(180deg,#167a4c,#06301d);color:#f2fff8;font-family:Cinzel,Georgia,'Times New Roman',serif;font-size:17px;line-height:1;letter-spacing:4px;text-transform:uppercase;text-decoration:none;box-shadow:0 0 30px rgba(40,240,150,.35);">Open my invite</a><!--<![endif]-->
         </td></tr>
         <tr><td align="center" style="padding:24px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Open it and we'll email you a 6-digit code to sign in. Accept or decline inside. This link is just for you, so please don't forward it.</td></tr>
         <tr><td align="center" style="padding:10px 0 0;font-family:${SANS};font-size:11px;line-height:1.6;color:#6f9a84;word-break:break-all;">Button not working? <a href="${invite.link}" style="color:#6fb894;">${invite.link}</a></td></tr>`
+  });
+}
+
+/**
+ * The owners' heads-up 3 days before a party's RSVP deadline. `summary` = { partyName, when, replyBy ({ date, time }), link (the
+ * party's admin view), counts ({ total, accepted, declined, waiting }), waiting ([{ name, guestOf, gender, sendCount }]) }.
+ */
+export function summaryEmailSubject({ partyName, counts }) { return `${partyName}: ${counts.waiting} still haven't replied`; }
+
+export function summaryEmailText(summary) {
+  return [
+    `${summary.partyName}: RSVPs close ${summary.replyBy.date} at ${summary.replyBy.time}.`,
+    `${summary.counts.accepted} accepted · ${summary.counts.declined} declined · ${summary.counts.waiting} haven't replied (of ${summary.counts.total}).`,
+    "",
+    "Still waiting on:",
+    ...summary.waiting.map((g) => `- ${g.name} (${g.gender === "female" ? "F" : "M"})${g.guestOf ? `, guest of ${g.guestOf}` : ""} · Invitation ${g.sendCount}`),
+    "",
+    "Remind them all, or re-invite anyone, from the guest list:",
+    summary.link,
+    "",
+    "UEX | Uniq Exclusives"
+  ].join("\n");
+}
+
+export function summaryEmailHtml(summary) {
+  const { counts } = summary;
+  const stat = (label, value) => `<td align="center" width="33%" style="padding:12px 4px;border:1px solid #145c3a;border-radius:12px;background:#041a10;"><span style="font-family:${SERIF};font-size:30px;line-height:1;color:#f2fff8;">${value}</span><br><span style="font-family:Cinzel,Georgia,serif;font-size:9px;letter-spacing:3px;color:#6fb894;text-transform:uppercase;">${label}</span></td>`;
+  const rows = summary.waiting.map((g) => `<tr><td style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:14px;line-height:1.4;color:#eafff3;text-align:left;">${esc(g.name)}<br><span style="font-size:12px;color:#8fb9a3;">${g.guestOf ? `Guest of ${esc(g.guestOf)} · ` : ""}${g.gender === "female" ? "Female" : "Male"}</span></td><td align="right" style="padding:11px 14px;border-top:1px solid #0f3d28;font-family:${SANS};font-size:12px;color:#6fb894;white-space:nowrap;">Invitation ${g.sendCount}</td></tr>`).join("");
+  return frame({
+    title: summaryEmailSubject(summary),
+    preheader: `${counts.waiting} guests haven't replied. RSVPs close ${summary.replyBy.date}.`,
+    inner: `        <tr><td align="center" style="padding:26px 0 0;font-family:${SERIF};font-style:italic;font-size:22px;line-height:1.35;color:#dff8ea;">Three days until RSVPs close</td></tr>
+        <tr><td class="party" align="center" style="padding:16px 0 0;font-family:${SERIF};font-size:38px;line-height:1.1;color:#f2fff8;text-shadow:0 0 26px rgba(60,255,160,.4);">${esc(summary.partyName)}</td></tr>
+        <tr><td align="center" style="padding:10px 0 0;font-family:${SANS};font-size:14px;line-height:1.5;color:#a8cfba;">${esc(summary.when)}<br>Reply by <strong style="color:#eafff3;">${esc(summary.replyBy.date)}, ${esc(summary.replyBy.time)}</strong></td></tr>
+        <tr><td style="padding:24px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="6" border="0"><tr>${stat("Accepted", counts.accepted)}${stat("Declined", counts.declined)}${stat("No reply", counts.waiting)}</tr></table></td></tr>
+        <tr><td style="padding:22px 0 0;font-family:Cinzel,Georgia,serif;font-size:10px;letter-spacing:4px;color:#6fb894;text-transform:uppercase;text-align:left;">Still waiting on</td></tr>
+        <tr><td style="padding:8px 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #145c3a;border-radius:14px;background:#03140c;">${rows}</table></td></tr>
+        <tr><td class="btn" align="center" style="padding:30px 0 0;">
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${summary.link}" style="height:56px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#3dffa8" fillcolor="#0b5434"><w:anchorlock/><center style="color:#f2fff8;font-family:Georgia,serif;font-size:15px;letter-spacing:3px;">OPEN THE GUEST LIST</center></v:roundrect><![endif]-->
+          <!--[if !mso]><!--><a href="${summary.link}" target="_blank" style="display:inline-block;padding:18px 36px;border:1px solid #3dffa8;border-radius:14px;background:#0b5434;background-image:linear-gradient(180deg,#167a4c,#06301d);color:#f2fff8;font-family:Cinzel,Georgia,'Times New Roman',serif;font-size:15px;line-height:1;letter-spacing:4px;text-transform:uppercase;text-decoration:none;box-shadow:0 0 30px rgba(40,240,150,.35);">Open the guest list</a><!--<![endif]-->
+        </td></tr>
+        <tr><td align="center" style="padding:18px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Use <strong style="color:#eafff3;">Remind all</strong> to nudge everyone at once, or <strong style="color:#eafff3;">Re-invite</strong> anyone with a fresh deadline. Anyone who hasn't replied by the deadline is marked Expired, not coming.</td></tr>`
   });
 }

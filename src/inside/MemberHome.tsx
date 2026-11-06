@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { collectionGroup, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../core/firebase";
 import { useAuth } from "../auth/AuthContext";
-import { STATUS_LABELS, formatWhen, parseGuest, parseParty, type Guest, type Party } from "../parties/model";
+import { STATUS_LABELS, formatWhen, guestDeadline, parseGuest, parseParty, shownStatus, type Guest, type Party } from "../parties/model";
+import { GlobeLoader } from "../ui/Loader";
 import { hasPage } from "../parties/registry";
 
 type Row = { party: Party; guest: Guest };
@@ -31,7 +32,7 @@ export default function MemberHome({ name }: { name: string }) {
     return () => { live = false; stop(); };
   }, [uid]);
   const first = name.split(" ")[0];
-  if (!rows) return <div className="spinner" aria-label="Loading" />;
+  if (!rows) return <div className="lux-loading"><GlobeLoader label="Finding your invitations…" /></div>;
   if (!rows.length) return <section className="lux-panel lux-welcome">
     <p className="lux-kicker">Uniq Exclusives</p>
     <h1>You're in, {first}.</h1>
@@ -41,12 +42,12 @@ export default function MemberHome({ name }: { name: string }) {
     <p className="lux-kicker">Your invitations</p>
     <h1>Welcome, {first}.</h1>
     <ul className="party-cards">
-      {rows.map(({ party, guest }) => <li key={party.id}>
+      {rows.map(({ party, guest }) => { const status = shownStatus(guest.status, guestDeadline(party, guest)); return <li key={party.id}>
         <Link to={`/p/${party.id}`} className="party-card">
           <span className="party-card-text"><strong>{party.name}</strong><small>{formatWhen(party.startsAt)}</small></span>
-          <span className={`lux-chip st-${guest.status}`}>{guest.status === "invited" ? "Reply" : STATUS_LABELS[guest.status]}</span>
+          <span className={`lux-chip st-${status}`}>{status === "invited" ? "Reply" : STATUS_LABELS[status]}</span>
         </Link>
-      </li>)}
+      </li>; })}
     </ul>
   </section>;
 }

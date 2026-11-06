@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
+import { PageLoader } from "../ui/Loader";
 import { useAuth } from "./AuthContext";
 
-export function Loading() { return <main className="lux-page lux-center"><div className="spinner" aria-label="Loading" /></main>; }
 export default function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <Loading />;
+  if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/signin" replace />;
   return <>{children}</>;
 }

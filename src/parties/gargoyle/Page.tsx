@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { PartyPageProps } from "../types";
 import RsvpControls from "../kit/RsvpControls";
 import InviteControls from "../kit/InviteControls";
+import Countdown from "../kit/Countdown";
 import Scene, { Bat } from "./Scene";
 import stryge560 from "./stryge-560.webp";
 import stryge1100 from "./stryge-1100.webp";
@@ -64,8 +65,9 @@ export default function Page(props: PartyPageProps) {
 
       <section className="gg-panel gg-rsvp gg-reveal">
         <p className="gg-label">Your answer</p>
-        <h2>{guest?.status === "accepted" ? "You're keeping watch with us" : guest?.status === "declined" ? "We'll miss you on the night" : "Will you keep watch with us?"}</h2>
-        {guest?.status === "declined" && guest.canRespond && <p className="gg-prose">Changed your mind? You can still accept until the night.</p>}
+        <h2>{guest?.status === "accepted" ? "You're keeping watch with us" : guest?.status === "declined" ? "We'll miss you on the night" : guest?.status === "expired" ? "The watch went on without you" : "Will you keep watch with us?"}</h2>
+        {guest?.status === "declined" && guest.canRespond && <p className="gg-prose">Changed your mind? You can still accept until the RSVP deadline.</p>}
+        <Countdown deadline={guest?.rsvpDeadline ?? party.rsvpDeadline} status={guest?.status} />
         <RsvpControls {...props} />
       </section>
 

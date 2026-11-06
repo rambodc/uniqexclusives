@@ -1,0 +1,41 @@
+/* Shared UI: the globe loader, the confirmation popup and the gender picker. Green on black, no yellow. */
+.uex-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.uex-loader{display:inline-grid;justify-items:center;gap:16px;color:#bfeed6}
+.uex-loader-orb{position:relative;display:grid;place-items:center;width:var(--orb);height:var(--orb)}
+.uex-loader-md{--orb:96px}.uex-loader-lg{--orb:150px}.uex-loader-sm{--orb:22px;gap:0}
+.uex-loader-orb img{position:relative;width:76%;height:auto;animation:uex-breathe 1.8s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(40,240,150,.45))}
+.uex-loader-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(61,255,168,0),rgba(61,255,168,0) 55%,rgba(61,255,168,.9) 92%,rgba(220,255,236,1) 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));animation:uex-orbit 1.4s linear infinite;filter:drop-shadow(0 0 6px rgba(61,255,168,.8))}
+.uex-loader-ring-2{inset:12%;opacity:.55;animation-duration:2.3s;animation-direction:reverse}
+.uex-loader-sm .uex-loader-ring{-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px))}
+.uex-loader-sm .uex-loader-ring-2{display:none}.uex-loader-sm .uex-loader-orb img{width:70%;filter:drop-shadow(0 0 4px rgba(40,240,150,.6))}
+.uex-loader-label{font:italic 400 22px/1.2 "Cormorant Garamond",Georgia,serif;color:#dff8ea;text-shadow:0 0 18px rgba(40,240,150,.35);animation:uex-fade 1.8s ease-in-out infinite}
+@keyframes uex-orbit{to{transform:rotate(360deg)}}
+@keyframes uex-breathe{0%,100%{transform:scale(1);filter:drop-shadow(0 0 8px rgba(40,240,150,.35))}50%{transform:scale(1.07);filter:drop-shadow(0 0 22px rgba(60,255,170,.85))}}
+@keyframes uex-fade{0%,100%{opacity:.75}50%{opacity:1}}
+.uex-page-loader{align-content:center}
+.uex-overlay{position:absolute;inset:0;z-index:5;display:grid;place-items:center;border-radius:inherit;background:radial-gradient(circle at 50% 45%,rgba(8,48,30,.94),rgba(2,10,6,.97));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:uex-in .25s ease-out}
+@keyframes uex-in{from{opacity:0}to{opacity:1}}
+.uex-busy{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+/* Confirmation popup */
+.uex-modal-back{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px;background:rgba(0,6,3,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:uex-in .18s ease-out}
+.uex-modal{width:min(440px,100%);display:grid;justify-items:center;gap:12px;padding:30px 26px 24px;text-align:center;border:1px solid rgba(80,255,170,.35);border-radius:22px;background:linear-gradient(170deg,#0b3020,#03110a);box-shadow:0 0 70px rgba(31,211,138,.22),inset 0 1px 0 rgba(160,255,210,.1);color:#e8fff3;animation:uex-pop .22s cubic-bezier(.2,.9,.3,1.2)}
+.uex-modal.is-danger{border-color:rgba(255,140,140,.35);box-shadow:0 0 70px rgba(255,90,90,.12),0 0 40px rgba(31,211,138,.12)}
+@keyframes uex-pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.uex-modal-globe{width:62px;height:auto;filter:drop-shadow(0 0 16px rgba(40,240,150,.45))}
+.uex-modal h2{margin:0;font:400 28px/1.15 "Cormorant Garamond",Georgia,serif;color:#f2fff8}
+.uex-modal-body{color:#a8cfba;font-size:15px;line-height:1.55}.uex-modal-body p{margin:0 0 6px}.uex-modal-body strong{color:#effff6}
+.uex-modal-field{width:100%;display:grid;gap:6px;text-align:left;font-size:13px;color:#a8cfba}
+.uex-modal-field input{width:100%;min-height:48px;padding:0 14px;border:1px solid rgba(80,255,170,.3);border-radius:12px;background:rgba(1,10,6,.8);color:#effff6;font:16px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark}
+.uex-modal-field small{color:#6f9a84}
+.uex-modal-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:8px;width:100%}.uex-modal-actions>*{flex:1 1 120px;white-space:nowrap;letter-spacing:.12em}
+.lux-button.is-danger{border-color:rgba(255,140,140,.7);background:linear-gradient(180deg,rgba(130,40,40,.6),rgba(60,14,14,.75));box-shadow:0 0 22px rgba(255,90,90,.2)}
+/* Gender */
+.uex-gender{margin:0;padding:0;border:0;display:grid;gap:6px;text-align:left;min-width:0}
+.uex-gender legend{padding:0 0 6px;font-size:13px;color:#a8cfba}
+.uex-gender div{display:flex;gap:6px;padding:4px;border:1px solid rgba(80,255,170,.25);border-radius:12px;background:rgba(1,10,6,.75);min-height:50px}
+.uex-gender label{flex:1;display:grid!important;place-items:center;border-radius:9px;color:#a8cfba!important;font-size:15px!important;cursor:pointer;transition:background .2s,color .2s}
+.uex-gender label.is-on{background:rgba(31,211,138,.22);color:#f2fff8!important;box-shadow:inset 0 0 0 1px rgba(80,255,170,.5),0 0 16px rgba(40,240,150,.18)}
+.uex-gender input{position:absolute;opacity:0;width:1px;height:1px}
+.uex-gender label:has(input:focus-visible){outline:2px solid #4dffb0;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.uex-loader-orb img,.uex-loader-ring,.uex-loader-label,.uex-overlay,.uex-modal,.uex-modal-back{animation:none}}

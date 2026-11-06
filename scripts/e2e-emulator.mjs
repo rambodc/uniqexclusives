@@ -22,7 +22,7 @@ async function crack(email) { const f = await codeDoc(email); const salt = f.sal
 await fetch(`http://127.0.0.1:8080/emulator/v1/projects/${P}/databases/(default)/documents`, { method: "DELETE" });
 await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${P}/accounts`, { method: "DELETE" });
 const OWNER = "rambodr@uniquem.ca";
-await fetch(`${FS}/users?documentId=OWNERUID`, { method: "POST", headers: admin, body: JSON.stringify({ fields: { email: { stringValue: OWNER }, name: { stringValue: "Rambod Rad" }, role: { stringValue: "owner" } } }) });
+await fetch(`${FS}/users?documentId=OWNERUID`, { method: "POST", headers: admin, body: JSON.stringify({ fields: { email: { stringValue: OWNER }, name: { stringValue: "Rambod Rad" }, role: { stringValue: "owner" }, gender: { stringValue: "male" }, staffPartyId: { nullValue: null } } }) });
 
 ok((await fails(call("requestCode", { email: "stranger@example.com" }))) === "functions/not-found", "unknown email is refused with not-found");
 ok(!(await codeDoc("stranger@example.com")), "no code stored for an email not on the list");
@@ -42,12 +42,12 @@ ok(cred.user.uid === "OWNERUID" && cred.user.email === OWNER, "signed in as the 
 ok((await fails(getDocs(collection(db, "loginCodes")))) === "permission-denied", "client cannot read loginCodes");
 ok((await getDocs(collection(db, "users"))).size === 1, "owner can list users");
 ok((await fails(setDoc(doc(db, "users", "x"), { email: "x@y.z", name: "X", role: "owner" }))) === "permission-denied", "owner cannot write users directly");
-const { uid } = await call("createUser", { email: "Guest@Example.com", name: "Test Guest", role: "member" });
+const { uid } = await call("createUser", { email: "Guest@Example.com", name: "Test Guest", gender: "female", role: "member", staffPartyId: null });
 ok(!!uid, "owner created a member");
-ok((await fails(call("createUser", { email: "guest@example.com", name: "Again", role: "member" }))) === "functions/already-exists", "duplicate email refused");
+ok((await fails(call("createUser", { email: "guest@example.com", name: "Again", gender: "male", role: "member", staffPartyId: null }))) === "functions/already-exists", "duplicate email refused");
 ok((await fails(call("removeUser", { uid: "OWNERUID" }))) === "functions/failed-precondition", "owner cannot remove themself");
 await signOut(auth);
-ok((await fails(call("createUser", { email: "a@b.co", name: "A", role: "owner" }))) === "functions/unauthenticated", "signed-out cannot create users");
+ok((await fails(call("createUser", { email: "a@b.co", name: "A", gender: "male", role: "owner", staffPartyId: null }))) === "functions/unauthenticated", "signed-out cannot create users");
 await call("requestCode", { email: "guest@example.com" });
 const gcode = await crack("guest@example.com");
 const g = await call("verifyCode", { email: "guest@example.com", code: gcode });
@@ -56,7 +56,7 @@ ok((await getDoc(doc(db, "users", uid))).get("role") === "member", "member reads
 ok((await fails(getDocs(collection(db, "users")))) === "permission-denied", "member cannot list users");
 ok((await fails(getDoc(doc(db, "users", "OWNERUID")))) === "permission-denied", "member cannot read others");
 ok((await fails(setDoc(doc(db, "users", uid), { email: "guest@example.com", name: "Test Guest", role: "owner" }))) === "permission-denied", "member cannot promote self");
-ok((await fails(call("createUser", { email: "a@b.co", name: "A", role: "owner" }))) === "functions/permission-denied", "member cannot create users");
+ok((await fails(call("createUser", { email: "a@b.co", name: "A", gender: "male", role: "owner", staffPartyId: null }))) === "functions/permission-denied", "member cannot create users");
 await signOut(auth);
 // burn attempts
 await call("requestCode", { email: "guest@example.com" });

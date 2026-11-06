@@ -6,7 +6,7 @@
 .lux-center{display:grid;place-items:center;align-content:center;gap:18px;padding-top:56px}
 .lux-aura{position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 60% 45% at 50% 18%,rgba(31,211,138,.20),transparent 70%),radial-gradient(ellipse 40% 30% at 15% 90%,rgba(20,150,95,.10),transparent 70%),radial-gradient(ellipse 40% 30% at 85% 90%,rgba(20,150,95,.10),transparent 70%)}
 .lux-back{position:absolute;top:18px;left:max(18px,4vw);color:#8fc8aa;font:500 13px/1 Cinzel,Georgia,serif;letter-spacing:.3em}.lux-back:hover{color:#dfffee}
-.lux-card{width:min(430px,100%);display:grid;justify-items:center;gap:12px;padding:38px 30px 32px;text-align:center;border:1px solid rgba(80,255,170,.22);border-radius:24px;background:linear-gradient(170deg,rgba(10,45,29,.78),rgba(3,14,9,.86));box-shadow:0 0 60px rgba(31,211,138,.12),inset 0 1px 0 rgba(160,255,210,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.lux-card{position:relative;width:min(430px,100%);display:grid;justify-items:center;gap:12px;padding:38px 30px 32px;text-align:center;border:1px solid rgba(80,255,170,.22);border-radius:24px;background:linear-gradient(170deg,rgba(10,45,29,.78),rgba(3,14,9,.86));box-shadow:0 0 60px rgba(31,211,138,.12),inset 0 1px 0 rgba(160,255,210,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .lux-globe{width:92px;height:auto;filter:drop-shadow(0 0 22px rgba(40,240,150,.45))}
 .lux-kicker{margin:0;font:500 11px/1 Cinzel,Georgia,serif;letter-spacing:.5em;padding-left:.5em;text-transform:uppercase;color:#8fd8b2}
 .lux-card h1,.lux-panel h1{margin:4px 0 0;font:400 34px/1.15 "Cormorant Garamond",Georgia,serif;letter-spacing:.01em;color:#effff6;text-shadow:0 0 22px rgba(40,240,150,.25)}
@@ -39,8 +39,8 @@
 .lux-avatar{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#1fb37a,#0a3f29);color:#fff;font-weight:700;font-size:14px}
 .lux-who{display:grid;gap:2px;min-width:0}.lux-who strong{font-weight:600;color:#effff6}.lux-who small{color:#8fb9a3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lux-you{font-size:12px;color:#6f9a84;padding:0 12px}
-.lux-add{grid-template-columns:2fr 1.5fr 1fr auto;align-items:end;margin-top:12px}
-.spinner{width:34px;height:34px;margin:12px auto;border:3px solid rgba(80,255,170,.18);border-top-color:#3be8a0;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.lux-add{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end;margin-top:12px}
+.lux-loading{display:grid;place-items:center;padding:34px 0}
 @media(max-width:720px){.lux-add{grid-template-columns:1fr}.lux-users li{grid-template-columns:auto 1fr auto;}.lux-users li .lux-chip{display:none}.lux-panel{padding:22px 16px}.lux-card{padding:32px 20px 26px}}
 /* Parties (owner views and member home). */
 .lux-tabs{display:flex;gap:6px;max-width:980px;margin:0 auto 16px;padding:4px;border:1px solid rgba(80,255,170,.16);border-radius:14px;background:rgba(1,10,6,.5);width:fit-content}
@@ -69,7 +69,8 @@
 .party-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .party-hero-row{display:flex;gap:20px;align-items:center;margin-bottom:14px}.party-hero-photo{width:200px;aspect-ratio:16/10;object-fit:cover;border-radius:14px;border:1px solid rgba(80,255,170,.2);flex:none}
 .party-hero-text{display:grid;gap:6px;min-width:0}.party-hero-text h1{margin:0}
-.party-counts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0 0}
+.party-counts{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:18px 0 0}
+.party-counts .is-gender{border-color:rgba(80,255,170,.3);background:rgba(31,211,138,.08)}
 .party-counts div{padding:12px;border:1px solid rgba(80,255,170,.12);border-radius:12px;background:rgba(1,10,6,.45);text-align:center}
 .party-counts dt{font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.2em;text-transform:uppercase;color:#6fb894}.party-counts dd{margin:8px 0 0;font:400 28px/1 "Cormorant Garamond",Georgia,serif;color:#effff6}.party-counts small{font-size:16px;color:#8fb9a3}
 .party-status{max-width:980px;margin:0 auto 14px}.party-link{display:block;margin-top:6px;word-break:break-all;font-size:12px;color:#dff8ea}
@@ -78,13 +79,13 @@
 .party-allow{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding-top:6px}
 .party-allow label,.party-invite-allow label{display:grid;gap:6px;font-size:13px;color:#a8cfba}
 .party-allow input[inputmode],.party-invite-allow input[inputmode]{width:90px;min-height:40px;padding:0 12px;border:1px solid rgba(80,255,170,.25);border-radius:10px;background:rgba(1,10,6,.75);color:#effff6;font-size:16px}
-.party-invite{grid-template-columns:1fr 1fr 1fr;align-items:end}.party-invite>.lux-error{grid-column:1/-1}
-.party-invite-allow{display:flex;align-items:flex-end;gap:14px;grid-column:1/3}
+.party-invite{grid-template-columns:1fr 1fr;align-items:end}.party-invite>.lux-error{grid-column:1/-1}
+.party-invite-allow{display:flex;align-items:flex-end;gap:14px}
 .party-history{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.party-history li{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#dff8ea;font-size:14px}.party-history small{color:#8fb9a3}
 @media(max-width:720px){
   .party-form,.party-invite{grid-template-columns:1fr}.party-invite-allow{grid-column:auto}
   .party-hero-row{flex-direction:column;align-items:stretch}.party-hero-photo{width:100%}
-  .party-counts{grid-template-columns:repeat(3,1fr)}.party-counts dd{font-size:24px}
+  .party-counts{grid-template-columns:repeat(4,1fr);gap:6px}.party-counts div{padding:10px 4px}.party-counts dt{font-size:9px;letter-spacing:.12em}.party-counts dd{font-size:24px}
   .party-guests li{grid-template-columns:auto 1fr auto}.party-guests li .lux-chip{display:inline-block}.party-row-actions{grid-column:1/-1;justify-content:flex-start}
   .party-head{align-items:center}.party-card{flex-direction:column;align-items:flex-start}.party-chips{justify-content:flex-start}
 }
@@ -95,4 +96,16 @@
 .lux-invite-hi{margin:6px 0 0;font:italic 400 20px/1.3 "Cormorant Garamond",Georgia,serif;color:#a8cfba}
 .lux-invite-name{margin:0!important;font-size:40px!important}
 .lux-invite-when{margin:0;font:500 12px/1.4 Cinzel,Georgia,serif;letter-spacing:.22em;text-transform:uppercase;color:#8fd8b2}
-.lux-invite-rule{width:120px;height:1px;margin:6px 0;background:linear-gradient(90deg,transparent,#3dffa8,transparent)}
+/* v13: deadlines, gender, staff, People controls. */
+.party-deadline strong{color:#effff6}
+.party-hint{color:#6f9a84;font-size:12px;line-height:1.45}
+.party-staff-kicker{margin-bottom:12px}
+.party-gender{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:99px;border:1px solid rgba(80,255,170,.3);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a6f3cf;vertical-align:2px}
+.party-gender.g-female{border-color:rgba(120,230,255,.4);color:#b5ecff}
+.lux-avatar.g-female{background:linear-gradient(145deg,#1fa4a8,#0a3a3f)}
+.lux-chip.st-expired{border-color:rgba(255,140,140,.35);color:#ffc4c4;background:rgba(255,110,110,.08)}
+.party-staff-add{grid-template-columns:minmax(0,320px) auto;align-items:end;margin-top:14px}
+.people li{grid-template-columns:auto 1fr auto}
+.people-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
+.people-actions select{min-height:34px;padding:0 10px;border:1px solid rgba(80,255,170,.3);border-radius:10px;background:rgba(1,10,6,.75);color:#effff6;font-size:13px;color-scheme:dark}
+@media(max-width:720px){.people li{grid-template-columns:auto 1fr}.people-actions{grid-column:1/-1;justify-content:flex-start}.party-staff-add{grid-template-columns:1fr}}
