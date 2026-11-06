@@ -91,3 +91,8 @@
 .party-hero-text .party-chips{justify-content:flex-start}
 .lux-form input,.lux-form select,.lux-form textarea{color-scheme:dark}
 .party-guests .lux-who small{white-space:normal;overflow-wrap:anywhere}
+/* Invite landing (/i/…): the party teaser above the code step. */
+.lux-invite-hi{margin:6px 0 0;font:italic 400 20px/1.3 "Cormorant Garamond",Georgia,serif;color:#a8cfba}
+.lux-invite-name{margin:0!important;font-size:40px!important}
+.lux-invite-when{margin:0;font:500 12px/1.4 Cinzel,Georgia,serif;letter-spacing:.22em;text-transform:uppercase;color:#8fd8b2}
+.lux-invite-rule{width:120px;height:1px;margin:6px 0;background:linear-gradient(90deg,transparent,#3dffa8,transparent)}

@@ -27,10 +27,18 @@ async function signInAs(email) {
   if (auth.currentUser) await signOut(auth);
   await signInWithCustomToken(auth, (await call("verifyCode", { email, code })).token);
 }
-async function useLink(link) {
+const crack = async (email) => {
+  const f = await raw(`loginCodes/${id(email)}`), salt = f.salt.stringValue, hash = f.hash.stringValue;
+  for (let i = 0; i < 1e6; i++) { const c = String(i).padStart(6, "0"); if (createHmac("sha256", salt).update(c).digest("hex") === hash) return c; }
+};
+/** Opens a personal link the way the /i page does: it emails a code (read back from the emulator), which signs the guest in. */
+async function useLink(link, email) {
   const [, partyId, token] = new URL(link).pathname.match(/^\/i\/([^/]+)\/([^/]+)$/);
-  const res = await call("redeemInvite", { partyId, token });
   if (auth.currentUser) await signOut(auth);
+  await fetch(`${FS}/loginCodes/${id(email)}`, { method: "DELETE", headers: admin });
+  const teaser = await call("openInvite", { partyId, token });
+  if (!teaser.sent || teaser.signedIn || "token" in teaser) throw new Error("openInvite should only send a code");
+  const res = await call("enterInvite", { partyId, token, code: await crack(email) });
   return signInWithCustomToken(auth, res.token);
 }
 
@@ -55,11 +63,26 @@ ok(annGuest.status.stringValue === "invited" && annGuest.guestOf.stringValue ===
 ok(!JSON.stringify(await list(`parties/${PID}/tokens`)).includes(ann.link.split("/").pop()), "only the token hash is stored");
 ok((await fails(call("inviteGuest", { partyId: PID, name: "Ann", email: "ann@example.com", canInvite: false }))) === "functions/already-exists", "no double invite");
 
-await useLink(ann.link);
-ok(auth.currentUser.uid === ann.uid, "invite link signs Ann in directly");
+{
+  const [, , token] = new URL(ann.link).pathname.split("/").slice(1);
+  if (auth.currentUser) await signOut(auth);
+  const teaser = await call("openInvite", { partyId: PID, token });
+  ok(teaser.partyName === "Test Night" && teaser.firstName === "Ann" && teaser.email === "a•••@example.com" && teaser.sent === true && !("token" in teaser) && !auth.currentUser,
+    "opening the link shows the teaser and masked email, emails a code, and signs nobody in");
+  ok((await fails(call("enterInvite", { partyId: PID, token, code: "000000" === (await crack("ann@example.com")) ? "111111" : "000000" }))) === "functions/permission-denied", "a wrong code is refused");
+  ok((await fails(call("enterInvite", { partyId: PID, token: "A".repeat(43), code: await crack("ann@example.com") }))) === "functions/permission-denied", "the right code with a made-up link is refused");
+  ok((await fails(call("redeemInvite", { partyId: PID, token }))) !== null, "the old direct sign-in is gone");
+}
+await useLink(ann.link, "ann@example.com");
+ok(auth.currentUser.uid === ann.uid, "the emailed code signs Ann in from her link");
+{
+  const [, , token] = new URL(ann.link).pathname.split("/").slice(1);
+  const again = await call("openInvite", { partyId: PID, token });
+  ok(again.signedIn === true && again.sent === false, "already signed in as Ann: the link skips the code");
+}
 ok((await fails(getDoc(doc(db, "parties", PID)))) === "permission-denied", "unpublished party is hidden from guests");
 ok((await fails(call("rsvp", { partyId: PID, status: "accepted" }))) === "functions/permission-denied", "no RSVP before it's published");
-await useLink(ann.link);
+await useLink(ann.link, "ann@example.com");
 ok(auth.currentUser.uid === ann.uid, "the link can be reused");
 
 await signInAs(OWNER);
@@ -71,7 +94,7 @@ await call("saveParty", { ...party, published: true, pageSlug: "test-night" });
 const preview = await getDoc(doc(db, "parties", PID));
 ok(preview.exists(), "owner can always read (preview)");
 
-await useLink(ann.link);
+await useLink(ann.link, "ann@example.com");
 const seen = await getDoc(doc(db, "parties", PID));
 ok(seen.get("name") === "Test Night" && seen.get("location") === null, "guest sees the party without the hidden location");
 ok((await fails(getDoc(doc(db, "parties", PID, "private", "details")))) === "permission-denied", "guest can't read private details");
@@ -96,12 +119,12 @@ ok((await fails(call("decideRequest", { partyId: PID, requestId: r1.id, approve:
 ok((await call("decideRequest", { partyId: PID, requestId: r2.id, approve: false })).status === "rejected", "owner rejects Cy");
 ok((await raw(`parties/${PID}/guests/${ann.uid}`)).invitesUsed.integerValue === "1", "a rejected request frees Ann's invite");
 
-await useLink(approved.link);
-ok(auth.currentUser.uid === approved.uid, "Bob's link signs him in");
+await useLink(approved.link, "bob@example.com");
+ok(auth.currentUser.uid === approved.uid, "Bob's link and code sign him in");
 ok((await fails(call("requestInvite", { partyId: PID, name: "Eve", email: "eve@example.com", note: "" }))) === "functions/permission-denied", "Bob can't invite yet");
 await signInAs(OWNER);
 await call("updateGuest", { partyId: PID, uid: approved.uid, canInvite: true, inviteLimit: 1 });
-await useLink(approved.link);
+await useLink(approved.link, "bob@example.com");
 ok(!!(await call("requestInvite", { partyId: PID, name: "Eve", email: "eve@example.com", note: "" })).id, "after the owner allows it, Bob can invite");
 
 await signInAs(OWNER);
@@ -109,11 +132,11 @@ const fresh = (await call("inviteLinkFor", { partyId: PID, uid: ann.uid })).link
 ok(fresh !== ann.link, "copy link mints a fresh link");
 const re = await call("resendInvite", { partyId: PID, uid: ann.uid });
 ok(re.emailed === true, "resend works");
-ok((await fails(call("redeemInvite", { partyId: PID, token: "A".repeat(43) }))) === "functions/permission-denied", "a made-up token is refused");
+ok((await fails(call("openInvite", { partyId: PID, token: "A".repeat(43) }))) === "functions/permission-denied", "a made-up token is refused");
 await call("saveParty", { ...party, published: true, pageSlug: "test-night", guestLimit: 2 });
 ok((await fails(call("inviteGuest", { partyId: PID, name: "Full", email: "full@example.com", canInvite: false }))) === "functions/resource-exhausted", "guest limit is enforced");
 await call("removeGuest", { partyId: PID, uid: ann.uid });
-ok((await fails(useLink(ann.link))) === "functions/permission-denied", "a removed guest's link stops working");
+ok((await fails(useLink(ann.link, "ann@example.com"))) === "functions/permission-denied", "a removed guest's link stops working");
 await signInAs(OWNER);
 await call("removeUser", { uid: approved.uid });
 ok(!(await raw(`parties/${PID}/guests/${approved.uid}`)), "removing a user takes them off party lists");

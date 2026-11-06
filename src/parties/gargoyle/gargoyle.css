@@ -1,0 +1,131 @@
+/* The Gargoyle Party: moonlit stone, drifting fog, glowing green eyes. UEX black-emerald, no yellow. */
+.gg{--ink:#010604;--mint:#7dffc4;--glow:#2bf09a;--stone:#0b1d16;--text:#dff8ea;--soft:#a8cfba;position:relative;background:var(--ink);color:var(--text);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}
+.gg *{box-sizing:border-box}
+
+/* Hero */
+.gg-hero{position:relative;min-height:100vh;min-height:100svh;display:grid;align-content:start;isolation:isolate;overflow:hidden;
+  background:radial-gradient(ellipse 80% 55% at 70% 18%,rgba(40,140,100,.22),transparent 70%),linear-gradient(180deg,#020a07 0%,#04140e 46%,#06231a 70%,#020906 100%)}
+.gg-sky{position:absolute;inset:0;z-index:-2;pointer-events:none}
+.gg-stars{position:absolute;inset:0 0 35% 0;background-image:radial-gradient(1px 1px at 12% 18%,#d9ffef,transparent),radial-gradient(1px 1px at 28% 8%,#bfffe2,transparent),radial-gradient(1.5px 1.5px at 44% 26%,#e9fff6,transparent),radial-gradient(1px 1px at 63% 12%,#bfffe2,transparent),radial-gradient(1px 1px at 82% 30%,#d9ffef,transparent),radial-gradient(1.5px 1.5px at 92% 6%,#e9fff6,transparent),radial-gradient(1px 1px at 6% 40%,#bfffe2,transparent),radial-gradient(1px 1px at 52% 44%,#d9ffef,transparent);background-size:420px 300px;opacity:.75;animation:gg-twinkle 7s ease-in-out infinite alternate}
+.gg-stars-2{background-size:290px 230px;background-position:60px 40px;opacity:.45;animation-duration:11s;animation-delay:-4s}
+.gg-moon{position:absolute;top:38%;right:7%;width:clamp(96px,11vw,150px);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 38% 35%,#f4fff9 0%,#cdeedd 38%,#93c4ad 70%,#6c9e88 100%);
+  box-shadow:0 0 60px 18px rgba(170,255,215,.22),0 0 160px 60px rgba(60,240,160,.14);animation:gg-moon 12s ease-in-out infinite alternate}
+.gg-moon::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 62% 58%,rgba(90,130,110,.35) 0 9%,transparent 10%),radial-gradient(circle at 35% 66%,rgba(90,130,110,.28) 0 6%,transparent 7%),radial-gradient(circle at 55% 30%,rgba(90,130,110,.22) 0 5%,transparent 6%)}
+.gg-cloud{position:absolute;height:60px;width:420px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(12,40,30,.95),rgba(12,40,30,0) 70%);filter:none}
+.gg-cloud-1{top:15%;left:-30%;animation:gg-cloud 70s linear infinite}
+.gg-cloud-2{top:24%;left:-40%;width:560px;height:80px;opacity:.8;animation:gg-cloud 95s linear infinite;animation-delay:-40s}
+.gg-beam{position:absolute;bottom:22%;left:50%;width:180px;height:120vh;margin-left:-90px;transform-origin:50% 100%;
+  background:linear-gradient(0deg,rgba(60,255,170,.32),rgba(60,255,170,.07) 55%,transparent);clip-path:polygon(44% 100%,56% 100%,100% 0,0 0);mix-blend-mode:screen;opacity:.7}
+.gg-beam-1{animation:gg-sweep 22s ease-in-out infinite alternate;--a:-38deg;--b:-8deg}
+.gg-beam-2{animation:gg-sweep 26s ease-in-out infinite alternate;animation-delay:-9s;--a:34deg;--b:6deg}
+.gg-beam-3{width:120px;margin-left:-60px;opacity:.45;animation:gg-sweep 30s ease-in-out infinite alternate;animation-delay:-15s;--a:-14deg;--b:20deg}
+.gg-bat{position:absolute;width:34px;opacity:0;animation:gg-bat 26s linear infinite}
+.gg-bat svg{display:block;width:100%;animation:gg-flap .35s ease-in-out infinite alternate}
+.gg-bat-1{top:20%;animation-delay:2s}.gg-bat-2{top:12%;width:24px;animation-delay:11s;animation-duration:32s}.gg-bat-3{top:30%;width:20px;animation-delay:19s;animation-duration:38s}
+
+.gg-hero-copy{position:relative;z-index:3;display:grid;justify-items:center;gap:12px;padding:max(64px,11vh) 20px 0;text-align:center}
+.gg-kicker{margin:0;font:500 11px/1.4 Cinzel,Georgia,serif;letter-spacing:.42em;padding-left:.42em;text-transform:uppercase;color:#8fd8b2}
+.gg-greet{margin:6px 0 0;font:italic 400 clamp(22px,3.4vw,30px)/1.25 "Cormorant Garamond",Georgia,serif;color:#cff5e2;animation:gg-rise 1.6s .2s both cubic-bezier(.2,.7,.2,1)}
+.gg-title{margin:0;max-width:14ch;font:500 clamp(46px,9vw,108px)/.98 Cinzel,Georgia,serif;letter-spacing:.04em;text-transform:uppercase;
+  background:linear-gradient(180deg,#f4fff9 0%,#bff5dc 45%,#4fd39a 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(43,240,154,.35));animation:gg-rise 1.8s .35s both cubic-bezier(.2,.7,.2,1)}
+.gg-when{margin:4px 0 0;font:500 clamp(12px,1.4vw,14px)/1.5 Cinzel,Georgia,serif;letter-spacing:.24em;text-transform:uppercase;color:#a6f3cf;animation:gg-rise 1.8s .55s both}
+
+.gg-scene{position:absolute;left:0;right:0;bottom:0;height:56%;z-index:1}
+.gg-house{position:absolute;inset:0;width:100%;height:100%;display:block}
+.gg-glow{position:absolute;left:50%;bottom:8%;width:min(900px,140vw);height:70%;transform:translateX(-50%);background:radial-gradient(ellipse 50% 60% at 50% 70%,rgba(43,240,154,.28),transparent 70%);animation:gg-breathe 9s ease-in-out infinite alternate}
+.gg-eye{animation:gg-eye 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.gg-win{animation:gg-win 9s ease-in-out infinite alternate}
+.gg-door{animation:gg-breathe 7s ease-in-out infinite alternate}
+
+.gg-fog{position:absolute;left:0;right:0;bottom:0;height:46%;z-index:2;pointer-events:none;overflow:hidden}
+.gg-fog i{position:absolute;bottom:-10%;left:0;width:300%;height:100%;
+  background:radial-gradient(ellipse 12% 40% at 8% 70%,rgba(150,230,195,.34),transparent 70%),radial-gradient(ellipse 14% 45% at 26% 80%,rgba(120,220,180,.28),transparent 70%),radial-gradient(ellipse 10% 35% at 41% 72%,rgba(150,230,195,.3),transparent 70%),radial-gradient(ellipse 15% 45% at 58% 82%,rgba(120,220,180,.26),transparent 70%),radial-gradient(ellipse 12% 40% at 75% 74%,rgba(150,230,195,.3),transparent 70%),radial-gradient(ellipse 13% 42% at 92% 80%,rgba(120,220,180,.28),transparent 70%);
+  animation:gg-fog 60s linear infinite}
+.gg-fog i:nth-child(2){bottom:-22%;opacity:.8;animation-duration:85s;animation-direction:reverse}
+.gg-fog i:nth-child(3){bottom:-34%;height:80%;opacity:.9;animation-duration:45s;background-color:transparent}
+.gg-fog::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,var(--ink),rgba(1,6,4,0))}
+
+.gg-embers{position:absolute;inset:0;z-index:2;pointer-events:none}
+.gg-embers i{position:absolute;bottom:18%;width:3px;height:3px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px 2px rgba(43,240,154,.6);opacity:0;animation:gg-ember 14s linear infinite}
+.gg-embers i:nth-child(1){left:12%;animation-delay:0s}.gg-embers i:nth-child(2){left:22%;animation-delay:-3s;animation-duration:17s}.gg-embers i:nth-child(3){left:31%;animation-delay:-7s}
+.gg-embers i:nth-child(4){left:38%;animation-delay:-11s;animation-duration:19s}.gg-embers i:nth-child(5){left:46%;animation-delay:-2s;animation-duration:16s}.gg-embers i:nth-child(6){left:53%;animation-delay:-9s}
+.gg-embers i:nth-child(7){left:59%;animation-delay:-5s;animation-duration:18s}.gg-embers i:nth-child(8){left:66%;animation-delay:-13s}.gg-embers i:nth-child(9){left:72%;animation-delay:-1s;animation-duration:20s}
+.gg-embers i:nth-child(10){left:79%;animation-delay:-8s}.gg-embers i:nth-child(11){left:86%;animation-delay:-4s;animation-duration:15s}.gg-embers i:nth-child(12){left:92%;animation-delay:-12s}
+.gg-embers i:nth-child(13){left:4%;animation-delay:-6s;animation-duration:21s}.gg-embers i:nth-child(14){left:49%;animation-delay:-10s;animation-duration:23s;width:2px;height:2px}
+
+.gg-cue{position:absolute;z-index:4;left:50%;bottom:22px;transform:translateX(-50%);display:grid;justify-items:center;gap:8px;color:#8fd8b2;text-decoration:none;font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.4em;padding-left:.4em;text-transform:uppercase}
+.gg-cue i{width:1px;height:34px;background:linear-gradient(180deg,var(--mint),transparent);animation:gg-cue 2.6s ease-in-out infinite}
+
+/* Content */
+.gg-main{position:relative;z-index:1;display:grid;gap:22px;width:min(980px,100%);margin:0 auto;padding:10px max(16px,4vw) 40px}
+.gg-reveal{opacity:0;transform:translateY(26px);transition:opacity 1.1s ease,transform 1.1s cubic-bezier(.2,.7,.2,1)}.gg-reveal.is-in{opacity:1;transform:none}
+.gg-tablet,.gg-panel{position:relative;border:1px solid rgba(80,255,170,.18);border-radius:22px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6 0 0 0 0 1 0 0 0 0 .8 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(170deg,rgba(14,44,32,.78),rgba(3,13,9,.9));
+  box-shadow:0 0 60px rgba(31,211,138,.08),inset 0 1px 0 rgba(160,255,210,.08)}
+.gg-tablet{margin-top:-40px;padding:26px clamp(18px,4vw,36px)}
+.gg-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:0;text-align:center}
+.gg-facts div{display:grid;gap:8px;align-content:start}.gg-facts div+div{border-left:1px solid rgba(80,255,170,.14)}
+.gg-facts dt{font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.34em;text-transform:uppercase;color:#6fb894}
+.gg-facts dd{margin:0;font:400 20px/1.35 "Cormorant Garamond",Georgia,serif;color:#effff6;white-space:pre-line}.gg-facts em{color:#9cc9b2}
+.gg-map{display:inline-block;margin-top:6px;color:#7fe7b8;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;text-underline-offset:3px}
+.gg-panel{padding:clamp(26px,5vw,44px) clamp(20px,5vw,48px);text-align:center;display:grid;justify-items:center;gap:12px}
+.gg-panel h2{margin:0;font:400 clamp(30px,5vw,44px)/1.1 "Cormorant Garamond",Georgia,serif;color:#effff6;text-shadow:0 0 24px rgba(40,240,150,.25)}
+.gg-label{margin:0;font:500 10px/1 Cinzel,Georgia,serif;letter-spacing:.42em;padding-left:.42em;text-transform:uppercase;color:#6fd9a6}
+.gg-sub{margin:-4px 0 0;font:italic 400 19px/1.3 "Cormorant Garamond",Georgia,serif;color:#9cc9b2}
+.gg-prose{margin:0;max-width:600px;color:var(--soft);font-size:16px;line-height:1.75;white-space:pre-line}
+.gg-rsvp .kit-rsvp{margin-top:4px}.gg-rsvp .kit-rsvp>.kit-note:first-child{display:none}.gg-panel .kit-invite{border-top:0;margin-top:0;padding-top:0}
+
+.gg-house-story{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:22px;align-items:stretch}
+.gg-house-story .gg-panel{align-content:center}
+.gg-etching{position:relative;margin:0;border-radius:22px;overflow:hidden;border:1px solid rgba(80,255,170,.18);min-height:320px;background:#020a06}
+.gg-etching img{display:block;width:100%;height:100%;object-fit:cover;object-position:70% 30%;transform:scale(1.04);animation:gg-drift 30s ease-in-out infinite alternate}
+.gg-etching::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 72% 28%,transparent 30%,rgba(1,6,4,.55) 80%),linear-gradient(0deg,rgba(1,6,4,.6),transparent 40%);pointer-events:none}
+.gg-stats{list-style:none;display:flex;justify-content:center;flex-wrap:wrap;gap:12px 28px;margin:8px 0 0;padding:0}
+.gg-stats li{display:grid;gap:4px}.gg-stats strong{font:500 26px/1 Cinzel,Georgia,serif;color:#effff6;text-shadow:0 0 18px rgba(40,240,150,.35)}
+.gg-stats span{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6fb894}
+
+.gg-soon{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.gg-soon-card{position:relative;display:grid;justify-items:center;gap:10px;padding:34px 26px 30px;text-align:center;border:1px dashed rgba(80,255,170,.28);border-radius:22px;background:rgba(3,14,9,.6);color:#8fd8b2}
+.gg-soon-card svg{width:44px;height:44px}
+.gg-soon-card h3{margin:0;font:400 28px/1.15 "Cormorant Garamond",Georgia,serif;color:#effff6}
+.gg-soon-card p{margin:0;max-width:300px;color:#8fb9a3;font-size:14px;line-height:1.6}
+.gg-badge{position:absolute;top:14px;right:14px;padding:5px 10px;border-radius:99px;border:1px solid rgba(80,255,170,.35);background:rgba(31,211,138,.1);color:#a6f3cf;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+
+.gg-foot{display:grid;justify-items:center;gap:12px;padding:30px 20px 46px;text-align:center}
+.gg-foot img{width:70px;height:auto;filter:drop-shadow(0 0 18px rgba(40,240,150,.4))}
+.gg-credit{margin:0;max-width:560px;color:#4f7d65;font-size:11px;line-height:1.6}
+
+/* Motion */
+@keyframes gg-twinkle{from{opacity:.35}to{opacity:.85}}
+@keyframes gg-moon{from{box-shadow:0 0 50px 14px rgba(170,255,215,.18),0 0 140px 50px rgba(60,240,160,.10)}to{box-shadow:0 0 70px 22px rgba(170,255,215,.26),0 0 190px 70px rgba(60,240,160,.18)}}
+@keyframes gg-cloud{from{transform:translateX(0)}to{transform:translateX(180vw)}}
+@keyframes gg-sweep{from{transform:rotate(var(--a))}to{transform:rotate(var(--b))}}
+@keyframes gg-bat{0%{opacity:0;transform:translate(-10vw,0)}4%{opacity:.9}50%{transform:translate(55vw,-6vh)}96%{opacity:.9}100%{opacity:0;transform:translate(115vw,2vh)}}
+@keyframes gg-flap{from{transform:scaleY(1)}to{transform:scaleY(.45)}}
+@keyframes gg-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes gg-breathe{from{opacity:.65}to{opacity:1}}
+@keyframes gg-eye{0%,100%{opacity:.85}40%{opacity:1}46%{opacity:.15}50%{opacity:1}70%{opacity:.6}}
+@keyframes gg-win{from{opacity:.55}to{opacity:1}}
+@keyframes gg-fog{from{transform:translateX(0)}to{transform:translateX(-33.333%)}}
+@keyframes gg-ember{0%{opacity:0;transform:translate(0,0)}10%{opacity:.9}70%{opacity:.5}100%{opacity:0;transform:translate(30px,-60vh)}}
+@keyframes gg-cue{0%,100%{transform:scaleY(.4);transform-origin:top;opacity:.4}50%{transform:scaleY(1);opacity:1}}
+@keyframes gg-drift{from{transform:scale(1.04) translate(0,0)}to{transform:scale(1.1) translate(-1.5%,1%)}}
+
+@media (max-width:760px){
+  .gg-hero-copy{padding-top:max(54px,9vh)}
+  .gg-kicker{letter-spacing:.28em;padding-left:.28em;font-size:10px}
+  .gg-moon{top:auto;bottom:47%;right:6%;width:96px}
+  .gg-scene{height:50%}
+  .gg-tablet{margin-top:-24px}
+  .gg-facts{grid-template-columns:1fr;gap:16px}.gg-facts div+div{border-left:0;border-top:1px solid rgba(80,255,170,.14);padding-top:16px}
+  .gg-house-story,.gg-soon{grid-template-columns:1fr}
+  .gg-etching{min-height:0;aspect-ratio:1/1}
+  .gg-beam{width:120px;margin-left:-60px}
+}
+@media (prefers-reduced-motion:reduce){
+  .gg *,.gg *::before,.gg *::after{animation:none!important;transition:none!important}
+  .gg-reveal{opacity:1;transform:none}
+  .gg-bat{display:none}.gg-embers i{opacity:.5}
+}

@@ -140,7 +140,7 @@ function InviteForm({ partyId, busy, act, sentText }: { partyId: string; busy: s
   }
   return <section className="lux-panel">
     <h2>Invite someone</h2>
-    <p className="lux-note">One person per invite, no plus-ones. If they're new, their member account is created and they get a personal link that signs them in.</p>
+    <p className="lux-note">One person per invite, no plus-ones. If they're new, their member account is created and they get a personal link. Opening it emails them a 6-digit code to sign in.</p>
     <form className="lux-form party-invite" onSubmit={submit} noValidate>
       <label>Name<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} maxLength={80} autoComplete="off" placeholder="First Last" /></label>
       <label>Email<input type="email" inputMode="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="off" placeholder="guest@company.com" /></label>

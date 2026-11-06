@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DAY_MS, cleanGuestInput, cleanPartyInput, cleanRequestInput, formatPartyDate, inviteLink, isInviteToken, newInviteToken, partyEndMs, tokenHash } from "../parties.js";
+import { DAY_MS, cleanGuestInput, cleanPartyInput, cleanRequestInput, formatPartyDate, inviteLink, isInviteToken, maskEmail, newInviteToken, partyEndMs, tokenHash } from "../parties.js";
 import { inviteEmailHtml, inviteEmailSubject, inviteEmailText } from "../email.js";
 
 const start = Date.UTC(2026, 11, 13, 3, 0);
@@ -33,6 +33,10 @@ test("invite tokens are long, url-safe and stored only as a hash", () => {
   assert.equal(inviteLink("https://uniqexclusives.com", "abcdefgh12", t), `https://uniqexclusives.com/i/abcdefgh12/${t}`);
   assert.ok(!isInviteToken("short"));
 });
+test("invite page shows only a masked email", () => {
+  assert.equal(maskEmail("annabel@example.com"), "an•••@example.com");
+  assert.equal(maskEmail("bo@x.io"), "b•••@x.io");
+});
 test("dates read in Calgary time", () => { assert.equal(formatPartyDate(Date.UTC(2026, 6, 12, 2, 0)), "Saturday, July 11, 2026 · 8:00 PM"); });
 
 const invite = { guestName: "Ann Lee", partyName: "UEX 2", when: "Saturday, December 12, 2026 · 8:00 PM", dressCode: "Black tie", location: null, link: "https://uniqexclusives.com/i/abc/tok", invitedBy: null, note: "" };
@@ -45,6 +49,8 @@ test("invite email: party, date, dress code, button, and no location until revea
   const revealed = inviteEmailHtml({ ...invite, location: "The Glasshouse, 1 Main St" });
   assert.ok(revealed.includes("The Glasshouse") && !revealed.includes("Revealed closer"));
   assert.match(inviteEmailText(invite), /Location: revealed closer/);
+  assert.ok(html.includes("6-digit code") && !html.includes("signs you straight in"), "the link sends a code; it never signs in by itself");
+  assert.match(inviteEmailText(invite), /6-digit code/);
 });
 test("a guest's invite shows who asked and their note, escaped", () => {
   const html = inviteEmailHtml({ ...invite, invitedBy: "Sam <b>", note: "Come!\n<script>" });

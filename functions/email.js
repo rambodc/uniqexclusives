@@ -118,7 +118,7 @@ export function inviteEmailText(invite) {
     "Open my invite:",
     invite.link,
     "",
-    "This link is just for you and signs you straight in. Please don't forward it.",
+    "Open it and we'll email you a 6-digit code to sign in. The link is just for you, so please don't forward it.",
     "",
     "UEX | Uniq Exclusives",
     SITE,
@@ -145,7 +145,7 @@ export function inviteEmailHtml(invite) {
           <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${invite.link}" style="height:60px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#3dffa8" fillcolor="#0b5434"><w:anchorlock/><center style="color:#f2fff8;font-family:Georgia,serif;font-size:17px;letter-spacing:3px;">OPEN MY INVITE</center></v:roundrect><![endif]-->
           <!--[if !mso]><!--><a href="${invite.link}" target="_blank" style="display:inline-block;padding:20px 44px;border:1px solid #3dffa8;border-radius:14px;background:#0b5434;background-image:linear-gradient(180deg,#167a4c,#06301d);color:#f2fff8;font-family:Cinzel,Georgia,'Times New Roman',serif;font-size:17px;line-height:1;letter-spacing:4px;text-transform:uppercase;text-decoration:none;box-shadow:0 0 30px rgba(40,240,150,.35);">Open my invite</a><!--<![endif]-->
         </td></tr>
-        <tr><td align="center" style="padding:24px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Accept or decline inside. This link is just for you and signs you straight in, so please don't forward it.</td></tr>
+        <tr><td align="center" style="padding:24px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#a8cfba;">Open it and we'll email you a 6-digit code to sign in. Accept or decline inside. This link is just for you, so please don't forward it.</td></tr>
         <tr><td align="center" style="padding:10px 0 0;font-family:${SANS};font-size:11px;line-height:1.6;color:#6f9a84;word-break:break-all;">Button not working? <a href="${invite.link}" style="color:#6fb894;">${invite.link}</a></td></tr>`
   });
 }
