@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
-import { isEmail } from "../../auth/roles";
+import { isEmail, type Gender } from "../../auth/roles";
+import GenderPicker from "../../ui/GenderPicker";
+import { Busy } from "../../ui/Loader";
 import type { PartyPageProps } from "../types";
 
 const LABEL: Record<string, string> = { pending: "Waiting for approval", approving: "Waiting for approval", approved: "Invited", rejected: "Not approved" };
 
 /** "Invite someone": only for guests the host allowed. Each request waits for an owner's approval before the invite goes out. */
 export default function InviteControls({ guest, preview, requestInvite }: Pick<PartyPageProps, "guest" | "preview" | "requestInvite">) {
-  const [name, setName] = useState(""), [email, setEmail] = useState(""), [note, setNote] = useState("");
+  const [name, setName] = useState(""), [email, setEmail] = useState(""), [note, setNote] = useState(""), [gender, setGender] = useState<Gender | "">("");
   const [busy, setBusy] = useState(false), [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   if (!guest?.invites.allowed) return preview && !guest ? <p className="kit-note">Guests the host allows to invite others see an invite form here.</p> : null;
   const { left, limit, requests } = guest.invites;
@@ -14,8 +16,9 @@ export default function InviteControls({ guest, preview, requestInvite }: Pick<P
     e.preventDefault(); setStatus(null);
     if (!name.trim()) { setStatus({ ok: false, text: "Enter their name." }); return; }
     if (!isEmail(email)) { setStatus({ ok: false, text: "Enter a valid email address." }); return; }
+    if (!gender) { setStatus({ ok: false, text: "Pick male or female." }); return; }
     setBusy(true);
-    try { await requestInvite({ name: name.trim(), email: email.trim().toLowerCase(), note: note.trim() }); setStatus({ ok: true, text: `Thanks. ${name.trim()} will get their own invite once the host approves.` }); setName(""); setEmail(""); setNote(""); }
+    try { await requestInvite({ name: name.trim(), email: email.trim().toLowerCase(), gender, note: note.trim() }); setStatus({ ok: true, text: `Thanks. ${name.trim()} will get their own invite once the host approves.` }); setName(""); setEmail(""); setNote(""); setGender(""); }
     catch (err) { setStatus({ ok: false, text: err instanceof Error ? err.message : "Couldn't send that. Try again." }); } finally { setBusy(false); }
   }
   return <div className="kit-invite">
@@ -25,8 +28,9 @@ export default function InviteControls({ guest, preview, requestInvite }: Pick<P
     {left > 0 && <form className="lux-form" onSubmit={send} noValidate>
       <label>Their name<input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoComplete="off" /></label>
       <label>Their email<input type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" /></label>
+      <GenderPicker name="request-gender" value={gender} onChange={setGender} />
       <label>A note for them (optional)<textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={600} rows={3} /></label>
-      <button className="lux-button" disabled={busy || preview}>{busy ? "Sending…" : "Send for approval"}</button>
+      <button className="lux-button" disabled={busy || preview}>{busy ? <Busy>Sending…</Busy> : "Send for approval"}</button>
     </form>}
     {status && <p className={status.ok ? "lux-ok" : "lux-error"} role="status">{status.text}</p>}
   </div>;

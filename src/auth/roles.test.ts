@@ -6,7 +6,9 @@ describe("roles", () => {
   it("rejects malformed records", () => {
     expect(parseUserRecord(null)).toBeNull();
     expect(parseUserRecord({ email: "a@b.co", name: "A B", role: "boss" })).toBeNull();
-    expect(parseUserRecord({ email: "a@b.co", name: "A B", role: "member", extra: 1 })).toEqual({ email: "a@b.co", name: "A B", role: "member" });
+    expect(parseUserRecord({ email: "a@b.co", name: "A B", role: "member" })).toBeNull();
+    expect(parseUserRecord({ email: "a@b.co", name: "A B", gender: "female", role: "member", extra: 1 })).toEqual({ email: "a@b.co", name: "A B", gender: "female", role: "member", staffPartyId: null });
+    expect(parseUserRecord({ email: "a@b.co", name: "A B", gender: "male", role: "staff", staffPartyId: "p1" })?.staffPartyId).toBe("p1");
   });
   it("reads codes however they are typed", () => { expect(codeDigits("123 456")).toBe("123456"); expect(codeDigits("12-34-567")).toBe("123456"); });
   it("formats the code with a dash between 3 and 3", () => {

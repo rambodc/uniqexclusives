@@ -29,6 +29,19 @@ export async function requireOwner(request) {
   return uid;
 }
 
+/**
+ * The caller when they may run one party's guest list: an owner (any party), or the staff member assigned to it
+ * (users/{uid}.staffPartyId). Returns { uid, role }.
+ */
+export async function requireManager(request, partyId) {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+  const me = await db.collection("users").doc(uid).get();
+  const role = me.get("role");
+  if (role === "owner" || (role === "staff" && typeof partyId === "string" && me.get("staffPartyId") === partyId)) return { uid, role };
+  throw new HttpsError("permission-denied", "You can't manage this party.");
+}
+
 /** Makes sure the Firebase Auth account for a users record exists, verified, with its email. */
 export async function ensureAuthUser(uid, email, name) {
   try {
@@ -42,14 +55,17 @@ export async function ensureAuthUser(uid, email, name) {
 
 /**
  * The users record for an email, created as a member when missing (with its Auth account). Returns { uid, name, created }.
- * `by` is the uid recorded as createdBy.
+ * `by` is the uid recorded as createdBy. An existing person keeps their account; their gender is set to the one given.
  */
-export async function findOrCreateMember(email, name, by) {
+export async function findOrCreateMember(email, name, gender, by) {
   const existing = await findUserByEmail(email);
-  if (existing) return { uid: existing.id, name: existing.get("name") ?? name, created: false };
+  if (existing) {
+    if (existing.get("gender") !== gender) await existing.ref.update({ gender, updatedAt: FieldValue.serverTimestamp() });
+    return { uid: existing.id, name: existing.get("name"), created: false };
+  }
   let uid;
   try { uid = (await auth.getUserByEmail(email)).uid; }
   catch (error) { if (error?.code !== "auth/user-not-found") throw error; uid = (await auth.createUser({ email, emailVerified: true, displayName: name })).uid; }
-  await db.collection("users").doc(uid).set({ email, name, role: "member", createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
+  await db.collection("users").doc(uid).set({ email, name, gender, role: "member", staffPartyId: null, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
   return { uid, name, created: true };
 }

@@ -4,6 +4,7 @@ import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../core/firebase";
 import { formatWhen, parseParty, type Party } from "../../parties/model";
 import { hasPage } from "../../parties/registry";
+import { GlobeLoader } from "../../ui/Loader";
 
 /** Owners: every party, newest date first. */
 export default function PartyList() {
@@ -16,7 +17,7 @@ export default function PartyList() {
       <Link to="/app/parties/new" className="lux-button as-link">New party</Link>
     </div>
     {error && <p className="lux-error">{error}</p>}
-    {!parties ? <div className="spinner" aria-label="Loading" />
+    {!parties ? <div className="lux-loading"><GlobeLoader label="Loading parties…" /></div>
       : !parties.length ? <p className="lux-note">No parties yet. Create the first one.</p>
       : <ul className="party-cards">{parties.map((p) => <li key={p.id}>
         <Link to={`/app/parties/${p.id}`} className="party-card">

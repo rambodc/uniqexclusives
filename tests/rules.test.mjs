@@ -27,10 +27,12 @@ const allowed = async (p) => { try { await p; return true; } catch (e) { console
 
 before(async () => {
   await fetch(`http://127.0.0.1:8080/emulator/v1/projects/${P}/databases/(default)/documents`, { method: "DELETE" });
-  await seed("users/OWNER", { email: "o@x.co", name: "Owner", role: "owner" });
-  await seed("users/ANN", { email: "ann@x.co", name: "Ann", role: "member" });
-  await seed("users/BOB", { email: "bob@x.co", name: "Bob", role: "member" });
-  await seed("users/STAFF", { email: "s@x.co", name: "Staff", role: "staff" });
+  await seed("users/OWNER", { email: "o@x.co", name: "Owner", gender: "male", role: "owner", staffPartyId: null });
+  await seed("users/ANN", { email: "ann@x.co", name: "Ann", gender: "female", role: "member", staffPartyId: null });
+  await seed("users/BOB", { email: "bob@x.co", name: "Bob", gender: "male", role: "member", staffPartyId: null });
+  await seed("users/STAFF", { email: "s@x.co", name: "Staff", gender: "male", role: "staff", staffPartyId: null });
+  await seed("users/RUNNER", { email: "r@x.co", name: "Runner", gender: "female", role: "staff", staffPartyId: "live0000001" });
+  await seed("users/SNEAK", { email: "m@x.co", name: "Sneak", gender: "male", role: "member", staffPartyId: "live0000001" });
   // live: published + custom page. draft: published, no page. hidden: has a page, not published.
   await seed("parties/live0000001", { name: "Live", published: true, pageSlug: "uex-2", location: null, locationRevealed: false });
   await seed("parties/draft000001", { name: "Draft", published: true, pageSlug: null });
@@ -62,8 +64,28 @@ test("a guest sees only a published party with a custom page they're on", async 
   assert.ok(await denied(getDoc(doc(db, "parties/draft000001"))));
   assert.ok(await denied(getDoc(doc(db, "parties/hidden00001"))));
   assert.ok(await denied(getDocs(collection(db, "parties"))));
-  const other = as("STAFF").db;  // staff is treated like a member
+  const other = as("STAFF").db;  // staff with no party assigned sees nothing
   assert.ok(await denied(getDoc(doc(other, "parties/live0000001"))));
+});
+
+test("staff read only their one party: the party, its whole guest list and requests; not the location, other parties or People", async () => {
+  const { db } = as("RUNNER");
+  assert.ok(await allowed(getDoc(doc(db, "parties/live0000001"))));
+  assert.equal((await getDocs(collection(db, "parties/live0000001/guests"))).size, 2);
+  assert.ok(await allowed(getDoc(doc(db, "parties/live0000001/guests/BOB"))));
+  assert.equal((await getDocs(collection(db, "parties/live0000001/requests"))).size, 2);
+  assert.ok(await denied(getDoc(doc(db, "parties/live0000001/private/details"))));
+  assert.ok(await denied(getDoc(doc(db, "parties/live0000001/tokens/abc"))));
+  assert.ok(await denied(getDoc(doc(db, "parties/hidden00001"))));
+  assert.ok(await denied(getDocs(collection(db, "parties/hidden00001/guests"))));
+  assert.ok(await denied(getDocs(collection(db, "parties"))));
+  assert.ok(await denied(getDocs(collection(db, "users"))));
+  assert.ok(await denied(getDoc(doc(db, "users/ANN"))));
+  assert.ok(await allowed(getDoc(doc(db, "users/RUNNER"))));
+  assert.ok(await denied(setDoc(doc(db, "parties/live0000001/guests/X"), { uid: "X" })));
+  assert.ok(await denied(setDoc(doc(db, "users/RUNNER"), { role: "owner" })));
+  // A member with a staffPartyId (a leftover, say) gets nothing from it.
+  assert.ok(await denied(getDocs(collection(as("SNEAK").db, "parties/live0000001/guests"))));
 });
 
 test("a guest reads only their own guest record and requests, never the list, location or tokens", async () => {
@@ -110,6 +132,9 @@ test("storage: owners upload images, guests of a published party can see them, n
   assert.ok(await denied(uploadBytes(ref(ann, "parties/live0000001/photo-2.jpg"), img, { contentType: "image/jpeg" })));
   assert.ok(await denied(deleteObject(ref(ann, "parties/live0000001/photo-1.jpg"))));
   assert.ok(await denied(getBytes(ref(as("STAFF").st, "parties/live0000001/photo-1.jpg"))));
+  assert.ok(await allowed(getBytes(ref(as("RUNNER").st, "parties/live0000001/photo-1.jpg"))));
+  assert.ok(await denied(getBytes(ref(as("RUNNER").st, "parties/hidden00001/photo-1.jpg"))));
+  assert.ok(await denied(uploadBytes(ref(as("RUNNER").st, "parties/live0000001/photo-3.jpg"), img, { contentType: "image/jpeg" })));
   assert.ok(await denied(getBytes(ref(as(null).st, "parties/live0000001/photo-1.jpg"))));
   assert.ok(await allowed(deleteObject(ref(owner, "parties/hidden00001/photo-1.jpg"))));
 });

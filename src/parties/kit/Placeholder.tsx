@@ -1,9 +1,10 @@
 import { formatWhen } from "../model";
 import type { PartyPageProps } from "../types";
+import Countdown from "./Countdown";
 import InviteControls from "./InviteControls";
 import RsvpControls from "./RsvpControls";
 
-/** Shown to owners when a party has no custom page yet. Guests never see it. It is also the simplest example of a party page. */
+/** Shown to owners and staff when a party has no custom page yet. Guests never see it. It is also the simplest example of a party page. */
 export default function Placeholder(props: PartyPageProps) {
   const { party } = props;
   return <article className="kit-placeholder">
@@ -17,6 +18,7 @@ export default function Placeholder(props: PartyPageProps) {
         <div><dt>Where</dt><dd>{party.location ?? <em>Revealed closer to the night</em>}</dd></div>
       </dl>
       {party.description && <p className="kit-desc">{party.description}</p>}
+      <Countdown deadline={props.guest?.rsvpDeadline ?? party.rsvpDeadline} status={props.guest?.status} />
       <RsvpControls {...props} />
       <InviteControls {...props} />
     </div>

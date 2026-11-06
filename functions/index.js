@@ -1,13 +1,17 @@
 // Uniq Exclusives Cloud Functions (2nd gen, us-central1).
 //  Sign-in (invite only, no passwords): requestCode emails a 6-digit code only to people who already have a users record (others get not-found);
 //  verifyCode checks it and returns a Firebase custom token (helpers in login.js). Codes live in loginCodes/{sha256(email)}, which clients can never read.
-//  Users (owners only): createUser, removeUser. Removing someone also takes them off every party list. Listing is a plain Firestore read that firestore.rules allows owners.
-//  Parties and invites: see parties-api.js.
+//  Users (owners only): createUser, removeUser, setUserRole, setStaffParty (a staff member runs exactly one party's guest list).
+//   Removing someone also takes them off every party list. Listing is a plain Firestore read that firestore.rules allows owners.
+//  Parties and invites: see parties-api.js. inviteSweep (hourly): expires unanswered invites and sends the owners' 3-day summary (sweep.js).
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { cleanCode, codeDocId, normalizeEmail } from "./codes.js";
 import { sendLoginCode, tokenFor, useLoginCode } from "./login.js";
 import { removeGuestPlace } from "./parties-api.js";
+import { isGender, isPartyId } from "./parties.js";
+import { runSweep } from "./sweep.js";
 import { cleanName, isRole } from "./users.js";
 import { TOKEN_SIGNER, auth, base, db, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
 
@@ -32,17 +36,26 @@ export const verifyCode = onCall({ ...base, timeoutSeconds: 20, serviceAccount: 
   return { token: await tokenFor(user.id, email, user.get("name")) };
 });
 
+/** A staff member's one party (or null), checked to exist. */
+async function staffParty(role, partyId) {
+  if (role !== "staff" || partyId === null || partyId === undefined || partyId === "") return null;
+  if (!isPartyId(partyId) || !(await db.collection("parties").doc(partyId).get()).exists) throw new HttpsError("invalid-argument", "Pick a party for them.");
+  return partyId;
+}
+
 export const createUser = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
   const by = await requireOwner(request);
-  const email = normalizeEmail(request.data?.email), name = cleanName(request.data?.name), role = request.data?.role;
+  const email = normalizeEmail(request.data?.email), name = cleanName(request.data?.name), role = request.data?.role, gender = request.data?.gender;
   if (!email) throw new HttpsError("invalid-argument", "Enter a valid email address.");
   if (!name) throw new HttpsError("invalid-argument", "Enter a name.");
+  if (!isGender(gender)) throw new HttpsError("invalid-argument", "Pick male or female.");
   if (!isRole(role)) throw new HttpsError("invalid-argument", "Pick a role.");
+  const staffPartyId = await staffParty(role, request.data?.staffPartyId);
   if (await findUserByEmail(email)) throw new HttpsError("already-exists", "That email is already on the list.");
   let uid;
   try { uid = (await auth.getUserByEmail(email)).uid; }
   catch (error) { if (error?.code !== "auth/user-not-found") throw error; uid = (await auth.createUser({ email, emailVerified: true, displayName: name })).uid; }
-  await db.collection("users").doc(uid).set({ email, name, role, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
+  await db.collection("users").doc(uid).set({ email, name, gender, role, staffPartyId, createdAt: FieldValue.serverTimestamp(), createdBy: by, updatedAt: FieldValue.serverTimestamp() });
   return { uid };
 });
 
@@ -61,4 +74,35 @@ export const removeUser = onCall({ ...base, timeoutSeconds: 20 }, async (request
   if (typeof email === "string") await db.collection("loginCodes").doc(codeDocId(email)).delete();
   await auth.deleteUser(uid).catch((error) => { if (error?.code !== "auth/user-not-found") throw error; });
   return { ok: true };
+});
+
+async function otherUser(request) {
+  const by = await requireOwner(request);
+  const uid = typeof request.data?.uid === "string" ? request.data.uid : "";
+  if (!uid) throw new HttpsError("invalid-argument", "Pick a user.");
+  if (uid === by) throw new HttpsError("failed-precondition", "You can't change your own access.");
+  const ref = db.collection("users").doc(uid);
+  if (!(await ref.get()).exists) throw new HttpsError("not-found", "That user is gone.");
+  return ref;
+}
+
+/** Owner, staff or member. Leaving staff clears the assigned party. */
+export const setUserRole = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
+  const ref = await otherUser(request);
+  const role = request.data?.role;
+  if (!isRole(role)) throw new HttpsError("invalid-argument", "Pick a role.");
+  await ref.update({ role, staffPartyId: await staffParty(role, request.data?.staffPartyId), updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true };
+});
+
+/** Assigns a staff member to one party (or none). */
+export const setStaffParty = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
+  const ref = await otherUser(request);
+  if ((await ref.get()).get("role") !== "staff") throw new HttpsError("failed-precondition", "Only staff can be assigned to a party.");
+  await ref.update({ staffPartyId: await staffParty("staff", request.data?.partyId), updatedAt: FieldValue.serverTimestamp() });
+  return { ok: true };
+});
+
+export const inviteSweep = onSchedule({ schedule: "every 60 minutes", timeZone: "America/Edmonton", region: "us-central1", secrets: [resendApiKey], timeoutSeconds: 300, memory: "256MiB", maxInstances: 1 }, async () => {
+  await runSweep();
 });

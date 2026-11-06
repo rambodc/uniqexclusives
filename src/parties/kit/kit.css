@@ -17,3 +17,31 @@
 .kit-note{margin:0;color:#a8cfba;font-size:15px;line-height:1.5}
 .kit-requests{list-style:none;margin:0;padding:0;width:100%;display:grid;gap:6px}.kit-requests li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border:1px solid rgba(80,255,170,.12);border-radius:12px;color:#dff8ea}.kit-requests small{color:#8fb9a3}
 .kit-invite .lux-form{text-align:left}
+/* RSVP countdown (kit/Countdown.tsx). Green glow only; the motion stops with prefers-reduced-motion. */
+.kit-cd{position:relative;width:min(460px,100%);margin:6px auto 4px;display:grid;justify-items:center;gap:8px;padding:22px 22px 20px;text-align:center;border:1px solid rgba(80,255,170,.28);border-radius:20px;background:radial-gradient(ellipse at 50% 0%,rgba(31,211,138,.16),rgba(2,12,7,.72) 70%);box-shadow:0 0 34px rgba(31,211,138,.12);overflow:hidden}
+.kit-cd-kicker{margin:0;font:500 11px/1 Cinzel,Georgia,serif;letter-spacing:.4em;padding-left:.4em;text-transform:uppercase;color:#8fd8b2}
+.kit-cd-big{margin:2px 0 0;display:flex;align-items:baseline;justify-content:center;gap:12px}
+.kit-cd-num{display:inline-block;font:400 76px/1 "Cormorant Garamond",Georgia,serif;color:#f2fff8;text-shadow:0 0 22px rgba(60,255,170,.65),0 0 2px rgba(220,255,236,.9);animation:kit-glow 2.2s ease-in-out infinite,kit-drop .6s cubic-bezier(.2,.9,.3,1.3)}
+.kit-cd-unit{font:italic 400 26px/1 "Cormorant Garamond",Georgia,serif;color:#cfeedd}
+.kit-cd-bar{width:100%;height:4px;border-radius:99px;background:rgba(80,255,170,.12);overflow:hidden}
+.kit-cd-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#0f7a4c,#3dffa8,#c9ffe4,#3dffa8);background-size:200% 100%;box-shadow:0 0 12px rgba(61,255,168,.7);animation:kit-flow 2.4s linear infinite}
+.kit-cd-copy{margin:2px 0 0;color:#a8cfba;font-size:14px;line-height:1.55}.kit-cd-copy strong{color:#effff6}
+.kit-cd.is-urgent{border-color:rgba(110,255,190,.75);background:radial-gradient(ellipse at 50% 0%,rgba(61,255,168,.26),rgba(2,14,8,.8) 72%);animation:kit-alarm 1.2s ease-in-out infinite}
+.kit-cd.is-urgent .kit-cd-kicker{color:#c9ffe4;animation:kit-blink 1.2s ease-in-out infinite}
+.kit-cd-tiles{display:flex;justify-content:center;gap:8px;margin-top:4px}
+.kit-cd-tile{display:grid;justify-items:center;gap:4px;min-width:64px;padding:10px 6px 8px;border:1px solid rgba(80,255,170,.4);border-radius:14px;background:rgba(1,12,7,.75);box-shadow:inset 0 0 18px rgba(40,240,150,.12)}
+.kit-cd-tile b{display:block;font:600 34px/1 "SF Mono",Menlo,Consolas,monospace;color:#f2fff8;text-shadow:0 0 16px rgba(60,255,170,.8)}
+.kit-cd-tile small{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8fd8b2}
+.kit-cd-tile.is-tick{border-color:#7dffc4;box-shadow:0 0 22px rgba(61,255,168,.45),inset 0 0 18px rgba(40,240,150,.25)}
+.kit-cd-tile.is-tick b{animation:kit-tick .9s ease-out}
+.kit-cd.is-expired{border-color:rgba(255,140,140,.35);background:radial-gradient(ellipse at 50% 0%,rgba(255,110,110,.1),rgba(4,10,7,.8) 70%);box-shadow:none}
+.kit-cd.is-expired .kit-cd-kicker{color:#ffb7b7}
+.kit-cd-gone{margin:0;font:400 34px/1.1 "Cormorant Garamond",Georgia,serif;color:#ffd6d6}
+@keyframes kit-glow{0%,100%{transform:scale(1);text-shadow:0 0 18px rgba(60,255,170,.5),0 0 2px rgba(220,255,236,.9)}50%{transform:scale(1.08);text-shadow:0 0 38px rgba(60,255,170,1),0 0 8px rgba(220,255,236,1)}}
+@keyframes kit-drop{from{opacity:0;transform:translateY(-14px) scale(1.2)}}
+@keyframes kit-flow{to{background-position:-200% 0}}
+@keyframes kit-alarm{0%,100%{box-shadow:0 0 24px rgba(61,255,168,.25)}50%{box-shadow:0 0 64px rgba(61,255,168,.65),inset 0 0 30px rgba(61,255,168,.15)}}
+@keyframes kit-blink{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes kit-tick{from{transform:translateY(-6px) scale(1.18);text-shadow:0 0 30px rgba(160,255,210,1)}to{transform:none}}
+@media (max-width:420px){.kit-cd-tile{min-width:54px}.kit-cd-tile b{font-size:28px}.kit-cd-num{font-size:64px}}
+@media (prefers-reduced-motion:reduce){.kit-cd-num,.kit-cd-bar i,.kit-cd.is-urgent,.kit-cd.is-urgent .kit-cd-kicker,.kit-cd-tile.is-tick b{animation:none}}
