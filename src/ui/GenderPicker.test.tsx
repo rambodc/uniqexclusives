@@ -13,7 +13,7 @@ const form = renderToStaticMarkup(<main className="lux-page"><section className=
 </section></main>);
 
 let browser: Browser;
-beforeAll(async () => { browser = await chromium.launch({ channel: "chrome" }); });
+beforeAll(async () => { browser = await chromium.launch({ channel: "chrome" }); }, 90_000);
 afterAll(async () => { await browser?.close(); });
 
 describe("GenderPicker", () => {
