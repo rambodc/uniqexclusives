@@ -1,15 +1,16 @@
 // The parties mini app's Cloud Functions. Every write to parties/** happens here; firestore.rules lets the browser only read.
 //  Owners: saveParty, deleteParty, inviteGuest, updateGuest, resendInvite, inviteLink, removeGuest, decideRequest.
-//  Guests: redeemInvite (personal link -> custom token), rsvp, requestInvite (ask to bring someone; an owner approves).
+//  Guests: openInvite (personal link -> emails a sign-in code), enterInvite (that code -> custom token), rsvp, requestInvite (ask to bring someone; an owner approves).
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
-import { TOKEN_SIGNER, auth, base, db, ensureAuthUser, findOrCreateMember, requireOwner, resendApiKey, storage } from "./app.js";
-import { normalizeEmail } from "./codes.js";
+import { TOKEN_SIGNER, base, db, findOrCreateMember, requireOwner, resendApiKey, storage } from "./app.js";
+import { cleanCode, normalizeEmail } from "./codes.js";
+import { sendLoginCode, tokenFor, useLoginCode } from "./login.js";
 import { EMAIL_FROM, REPLY_TO, SITE, inviteEmailHtml, inviteEmailSubject, inviteEmailText } from "./email.js";
 import { sendEmail } from "./mailer.js";
 import {
-  cleanAllowance, cleanGuestInput, cleanPartyInput, cleanRequestInput, formatPartyDate, inviteLink, isInviteToken, isPartyId,
+  cleanAllowance, cleanGuestInput, cleanPartyInput, cleanRequestInput, formatPartyDate, inviteLink, isInviteToken, isPartyId, maskEmail,
   newInviteToken, partyEndMs, tokenHash
 } from "./parties.js";
 
@@ -170,17 +171,37 @@ export const removeGuest = onCall({ ...base, timeoutSeconds: 20 }, async (reques
   return { ok: true };
 });
 
-export const redeemInvite = onCall({ ...base, timeoutSeconds: 20, serviceAccount: TOKEN_SIGNER }, async (request) => {
-  const partyId = request.data?.partyId, token = request.data?.token;
+/** The guest a personal link points to, while the party is still on. Any problem reads as the same "bad link". */
+async function resolveInvite(data) {
+  const partyId = data?.partyId, token = data?.token;
   if (!isPartyId(partyId) || !isInviteToken(token)) throw new HttpsError("permission-denied", BAD_LINK);
   const tokenSnap = await partyRef(partyId).collection("tokens").doc(tokenHash(token)).get();
   if (!tokenSnap.exists) throw new HttpsError("permission-denied", BAD_LINK);
   const uid = tokenSnap.get("uid");
   const [party, guest, user] = await Promise.all([loadParty(partyId).catch(() => null), partyRef(partyId).collection("guests").doc(uid).get(), db.collection("users").doc(uid).get()]);
-  if (!party || !guest.exists || !user.exists) throw new HttpsError("permission-denied", BAD_LINK);
+  if (!party || !guest.exists || !user.exists || typeof user.get("email") !== "string") throw new HttpsError("permission-denied", BAD_LINK);
   if (Date.now() >= party.endMs) throw new HttpsError("permission-denied", "This party is over, so its invite links have closed.");
-  await ensureAuthUser(uid, user.get("email"), user.get("name"));
-  return { token: await auth.createCustomToken(uid) };
+  return { party, guest, user, uid, email: user.get("email") };
+}
+
+/**
+ * Opening a personal link (/i/:partyId/:token): it never signs anyone in. It shows a teaser and emails that guest a fresh
+ * 6-digit code (same code email and limits as the sign-in page). Calling it again resends. Someone already signed in as
+ * that guest skips the code.
+ */
+export const openInvite = onCall({ ...base, secrets: [resendApiKey], timeoutSeconds: 30 }, async (request) => {
+  const { party, guest, user, uid, email } = await resolveInvite(request.data);
+  const teaser = { partyName: party.data.name, startsAt: party.startsAt, firstName: String(guest.get("name") ?? "").split(" ")[0], email: maskEmail(email) };
+  if (request.auth?.uid === uid) return { ...teaser, signedIn: true, sent: false };
+  return { ...teaser, signedIn: false, sent: await sendLoginCode(user, email) };
+});
+
+/** The code from that email, typed on the invite page: signs that one guest in (custom token). */
+export const enterInvite = onCall({ ...base, timeoutSeconds: 20, serviceAccount: TOKEN_SIGNER }, async (request) => {
+  const { user, uid, email } = await resolveInvite(request.data);
+  const code = cleanCode(request.data?.code);
+  if (!code || !(await useLoginCode(email, code))) throw new HttpsError("permission-denied", "That code isn't right or has expired. Send a new one.");
+  return { token: await tokenFor(uid, email, user.get("name")) };
 });
 
 async function requireGuest(request) {

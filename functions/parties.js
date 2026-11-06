@@ -97,6 +97,13 @@ export function tokenHash(token) { return createHash("sha256").update(token).dig
 export function isInviteToken(value) { return typeof value === "string" && /^[A-Za-z0-9_-]{43}$/.test(value); }
 export function inviteLink(site, partyId, token) { return `${site}/i/${partyId}/${token}`; }
 
+/** "an•••@example.com": enough for a guest to recognise their own address on the invite page. */
+export function maskEmail(email) {
+  const at = email.lastIndexOf("@");
+  const local = email.slice(0, at);
+  return `${local.slice(0, local.length > 3 ? 2 : 1)}•••${email.slice(at)}`;
+}
+
 /** "Saturday, December 12, 2026 · 8:00 PM" in Calgary time. */
 export function formatPartyDate(ms) {
   const date = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(ms);

@@ -11,6 +11,7 @@ export function definePage(load: () => Promise<{ default: ComponentType<PartyPag
  *   "uex-2": definePage(() => import("./uex-2/Page")),
  */
 export const PARTY_PAGES: Record<string, PartyPage> = {
+  gargoyle: definePage(() => import("./gargoyle/Page")),
 };
 export const PAGE_SLUGS = Object.keys(PARTY_PAGES);
 export function hasPage(slug: string | null): slug is string { return !!slug && Object.hasOwn(PARTY_PAGES, slug); }

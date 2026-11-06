@@ -1,17 +1,15 @@
 // Uniq Exclusives Cloud Functions (2nd gen, us-central1).
 //  Sign-in (invite only, no passwords): requestCode emails a 6-digit code only to people who already have a users record (others get not-found);
-//  verifyCode checks it and returns a Firebase custom token. Codes live in loginCodes/{sha256(email)}, which clients can never read.
+//  verifyCode checks it and returns a Firebase custom token (helpers in login.js). Codes live in loginCodes/{sha256(email)}, which clients can never read.
 //  Users (owners only): createUser, removeUser. Removing someone also takes them off every party list. Listing is a plain Firestore read that firestore.rules allows owners.
 //  Parties and invites: see parties-api.js.
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { logger } from "firebase-functions/v2";
-import { CODE_TTL_MS, checkCode, cleanCode, codeDocId, hashCode, newCode, newSalt, normalizeEmail, sendWindow } from "./codes.js";
-import { EMAIL_FROM, REPLY_TO, codeEmailHtml, codeEmailSubject, codeEmailText } from "./email.js";
-import { sendEmail } from "./mailer.js";
+import { cleanCode, codeDocId, normalizeEmail } from "./codes.js";
+import { sendLoginCode, tokenFor, useLoginCode } from "./login.js";
 import { removeGuestPlace } from "./parties-api.js";
 import { cleanName, isRole } from "./users.js";
-import { TOKEN_SIGNER, auth, base, db, ensureAuthUser, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
+import { TOKEN_SIGNER, auth, base, db, findUserByEmail, requireOwner, resendApiKey } from "./app.js";
 
 export * from "./parties-api.js";
 const BAD_CODE = "That code isn't right or has expired. Request a new one.";
@@ -22,49 +20,16 @@ export const requestCode = onCall({ ...base, secrets: [resendApiKey], timeoutSec
   if (!email) throw new HttpsError("invalid-argument", "Enter a valid email address.");
   const user = await findUserByEmail(email);
   if (!user) throw new HttpsError("not-found", NO_ACCOUNT);
-  const ref = db.collection("loginCodes").doc(codeDocId(email));
-  const code = newCode(), salt = newSalt(), now = Date.now();
-  const allowed = await db.runTransaction(async (tx) => {
-    const window = sendWindow((await tx.get(ref)).data()?.sends, now);
-    if (!window.allowed) return false;
-    tx.set(ref, { hash: hashCode(code, salt), salt, expiresAt: now + CODE_TTL_MS, attempts: 0, sends: [...window.recent, now], uid: user.id, createdAt: FieldValue.serverTimestamp() });
-    return true;
-  });
-  if (!allowed) {
-    logger.warn("Sign-in code rate limited", { uid: user.id });
-    return { ok: true };
-  }
-  try {
-    const name = typeof user.get("name") === "string" ? user.get("name").split(" ")[0] : "";
-    const id = await sendEmail(resendApiKey.value(), {
-      from: EMAIL_FROM, to: [email], reply_to: REPLY_TO, subject: codeEmailSubject(code),
-      html: codeEmailHtml(code, name), text: codeEmailText(code, name)
-    }, { idempotencyKey: `login-code/${codeDocId(email)}/${now}` });
-    logger.info("Sign-in code sent", { uid: user.id, resendId: id });
-  } catch (error) {
-    logger.error("requestCode failed", { message: error instanceof Error ? error.message : String(error) });
-    throw new HttpsError("internal", "We couldn't send the code. Please try again.");
-  }
+  await sendLoginCode(user, email);   // a rate-limited address gets the same answer; its latest code still works
   return { ok: true };
 });
 
 export const verifyCode = onCall({ ...base, timeoutSeconds: 20, serviceAccount: TOKEN_SIGNER }, async (request) => {
   const email = normalizeEmail(request.data?.email), code = cleanCode(request.data?.code);
-  if (!email || !code) throw new HttpsError("invalid-argument", BAD_CODE);
-  const ref = db.collection("loginCodes").doc(codeDocId(email));
-  const result = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref), record = snap.data();
-    const outcome = checkCode(record, code, Date.now());
-    if (outcome === "ok") tx.update(ref, { hash: FieldValue.delete(), salt: FieldValue.delete(), expiresAt: 0, attempts: 0 });   // one use; keep send history for the rate limit
-    else if (outcome === "wrong") tx.update(ref, { attempts: FieldValue.increment(1) });
-    return outcome;
-  });
-  if (result !== "ok") throw new HttpsError("permission-denied", BAD_CODE);
+  if (!email || !code || !(await useLoginCode(email, code))) throw new HttpsError("permission-denied", BAD_CODE);
   const user = await findUserByEmail(email);
   if (!user) throw new HttpsError("permission-denied", BAD_CODE);
-  const name = typeof user.get("name") === "string" ? user.get("name") : undefined;
-  await ensureAuthUser(user.id, email, name);
-  return { token: await auth.createCustomToken(user.id) };
+  return { token: await tokenFor(user.id, email, user.get("name")) };
 });
 
 export const createUser = onCall({ ...base, timeoutSeconds: 20 }, async (request) => {
